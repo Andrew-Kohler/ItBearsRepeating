@@ -8,14 +8,14 @@ public class PlayerMovement : MonoBehaviour
     //This is whether or not the player can actually move
     [SerializeField] private bool disabled = false;
     // The speed at which the player moves
-    [SerializeField] private float Speed = 5f;
+    [SerializeField] private float Speed = 2.7f;
     // The multiplier on speed for sprinting
-    [SerializeField] private float SprintMult = 1.6f;
+    [SerializeField] private float SprintMult = 2.5f;
     private float SpeedMult = 1f;
     // Acceleration of the player. Smaller number = faster
     [SerializeField] private float Acceleration = .05f;
     // This means that you're 1D character is facing left by default (1D means you only face left or right)")]
-    [SerializeField] private bool SpriteFacingRight = false;
+    [SerializeField] private bool SpriteFacingRight = true;
 
     [Header("Jump Variables")]
     //Controls whether your player can jump or not
@@ -28,6 +28,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float FallMultiplier = 3f;
 
     //The force of the air dash
+    [Header("Air Dash Variables")]
     [SerializeField] private float dashPower = 2f;
     private bool canAirDash = true;
     private bool isDashing = false;  // This bear is always dashing <3
@@ -39,6 +40,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
     // The length of the ray used to detect the ground.
     [SerializeField] private float rayLength = .5f;
+
+    [Header("Misc Variables")]
+    [SerializeField] private float timeBetweenIdles = 7f;
+    private float idleCountdown;
 
     private Rigidbody2D rb;
     private Collider2D col;
@@ -63,8 +68,10 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
         rend = GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
-        //anim = GetComponent<Animator>(); //Get Animator Component
+        anim = GetComponent<Animator>(); //Get Animator Component
         //playerAudio = GetComponent<PlayerAudio>();
+
+        idleCountdown = timeBetweenIdles;
     }
 
     // Update is called once per frame
@@ -72,40 +79,43 @@ public class PlayerMovement : MonoBehaviour
     {
         //check if the player is grounded
         isGrounded = Physics2D.BoxCast(col.bounds.center, col.bounds.size, 0.0f, Vector2.down, rayLength, groundLayer);
+        anim.SetBool("isGrounded", isGrounded);
 
         if (!disabled) //If player movement is NOT disabled
         {
+            idleCountdown -= Time.deltaTime;    // The countdown that lets us know the player has been inactive long enough for an anim
+
             if (ShowDebugRaycast)
                 Debug.DrawRay(col.bounds.center, Vector2.down * rayLength, Color.red); //draws a ray showing ray length
 
-            //Get horizontal and vertical input. See Project Settings > Input Manager
-            
-
             //Animation
-            /*anim.SetFloat("MoveHorizontal", HorizontalMovement);
-            if (HorizontalMovement != 0 || VerticalMovement != 0)
+            //anim.SetFloat("MoveHorizontal", HorizontalMovement);
+            if (HorizontalMovement != 0) // || VerticalMovement != 0)
             {
-                anim.SetBool("isMoving", true);
-                if (playerAudio && !playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
+                idleCountdown = timeBetweenIdles;   // Reset our idle timer
+                anim.SetBool("isMovingH", true);
+                /*if (playerAudio && !playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
                 {
                     playerAudio.WalkSource.Play();
-                }
+                }*/
             }
             else
             {
-                anim.SetBool("isMoving", false);
-                if (playerAudio && playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
+                anim.SetBool("isMovingH", false);
+                /*if (playerAudio && playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
                 {
                     playerAudio.WalkSource.Stop();
-                }
-            }*/
+                }*/
+            }
 
             if (!GetComponent<PlayerCrouch>().IsCrouching)  // We do nothing when we crouch
             {
+                //Get horizontal and vertical input. See Project Settings > Input Manager
                 HorizontalMovement = Input.GetAxisRaw("Horizontal");
 
                 if (canJump && Input.GetButtonDown("Jump") && isGrounded) //If the player jumps and is grounded
                 {
+                    idleCountdown = timeBetweenIdles;
                     Jump();
                 }
                 else if (canJump && Input.GetButtonDown("Jump") && NumberOfJumps > 1 && jumpsLeft > 1) //Or if the player has jumps left
@@ -127,13 +137,24 @@ public class PlayerMovement : MonoBehaviour
 
                 // Check if the player is sprinting
                 if (Input.GetButton("Sprint"))
+                {
+                    idleCountdown = timeBetweenIdles;
                     sprint = true;
+                }     
                 else
                     sprint = false;
+                anim.SetBool("isRunning", sprint);
             }
             else
             {
                 rb.velocity = Vector2.zero;
+            }
+
+            if (idleCountdown <= 0)
+            {
+                Debug.Log("Sniff");
+                StartCoroutine(DoIdleTwo());
+                idleCountdown = timeBetweenIdles;
             }
             
         }
@@ -203,6 +224,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Jump()
     {
+        idleCountdown = timeBetweenIdles;
         rb.velocity = new Vector2(rb.velocity.x, 0); //Stop any previous vertical movement
         rb.AddForce(Vector2.up * JumpForce, ForceMode2D.Impulse); //Add force upwards as an impulse.
         //if (playerAudio && playerAudio != null)
@@ -231,7 +253,7 @@ public class PlayerMovement : MonoBehaviour
         transform.localScale = currentScale;
     }
 
-    // Coroutines
+    // Coroutines -----------------------------------------------
     IEnumerator DoAirDash()
     {
         disabled = true;
@@ -249,6 +271,13 @@ public class PlayerMovement : MonoBehaviour
         canAirDash = true;  // Reset air dash
         isDashing = false;
         yield return null;
+    }
+
+    IEnumerator DoIdleTwo()    // Purely for playing and exiting Idle Animation 2
+    {
+        anim.Play("Idle2");
+        yield return new WaitForSeconds(2.583f);
+        anim.Play("Idle");
     }
 
 }
