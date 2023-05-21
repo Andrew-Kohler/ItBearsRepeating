@@ -49,6 +49,8 @@ public class PlayerMovement : MonoBehaviour
     private Collider2D col;
     private SpriteRenderer rend;
     private Animator anim;
+    private PlayerCrouch crouch;
+    private PlayerAttack attack;
 
     private float HorizontalMovement;
     private float VerticalMovement;
@@ -69,6 +71,8 @@ public class PlayerMovement : MonoBehaviour
         col = GetComponent<Collider2D>(); //Get Collider component
         rend = GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
         anim = GetComponent<Animator>(); //Get Animator Component
+        crouch = GetComponent<PlayerCrouch>();
+        attack = GetComponent<PlayerAttack>();
         //playerAudio = GetComponent<PlayerAudio>();
 
         idleCountdown = timeBetweenIdles;
@@ -108,7 +112,7 @@ public class PlayerMovement : MonoBehaviour
                 }*/
             }
 
-            if (!GetComponent<PlayerCrouch>().IsCrouching)  // We do nothing when we crouch
+            if (!crouch.IsCrouching && !attack.IsSlashing)  // We do nothing when we crouch, and while slashing we have to stay put
             {
                 //Get horizontal and vertical input. See Project Settings > Input Manager
                 HorizontalMovement = Input.GetAxisRaw("Horizontal");
@@ -118,7 +122,7 @@ public class PlayerMovement : MonoBehaviour
                     idleCountdown = timeBetweenIdles;
                     Jump();
                 }
-                else if (canJump && Input.GetButtonDown("Jump") && NumberOfJumps > 1 && jumpsLeft > 1) //Or if the player has jumps left
+                else if (canJump && Input.GetButtonDown("Jump") && NumberOfJumps > 1 && jumpsLeft > 1) // Or if the player has jumps left
                 {
                     Jump();
                     jumpsLeft--;
@@ -147,6 +151,8 @@ public class PlayerMovement : MonoBehaviour
             }
             else
             {
+                idleCountdown = timeBetweenIdles;
+                HorizontalMovement = 0;
                 rb.velocity = Vector2.zero;
             }
 
