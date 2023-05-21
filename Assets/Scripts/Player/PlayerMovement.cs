@@ -22,6 +22,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool canJump = true;
     //The force of your jump (Be sure to have your gravity set to 1 for side-scroller
     [SerializeField] private float JumpForce = 7f;
+    /*//The force of your jump (Be sure to have your gravity set to 1 for side-scroller
+    [SerializeField] private float ShashSuspendForce = 2f;*/
     //Number of jumps your player can do each time they touch the ground. (2 = Double jump)
     [SerializeField] private int NumberOfJumps = 1;
     // The multiplier at which you fall down (used for smooth movement) and it can't be below 1
@@ -32,6 +34,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float dashPower = 2f;
     private bool canAirDash = true;
     private bool isDashing = false;  // This bear is always dashing <3
+    public bool IsAirDashing => isDashing;
 
     [Header("Raycast Jumping Variables")]
     // Will show a red ray drawn from center of your sprite, it should extend from your box collider to touch the ground. If it doesn't reach the ground, change rayLength until it does. If you cannot see it, click the Gizmos button in the top right of the Game Window.
@@ -58,8 +61,9 @@ public class PlayerMovement : MonoBehaviour
 
     private bool isGrounded = false;    // If the player is grounded
     public bool IsGrounded => isGrounded;   // Getter for isGrounded
-    private bool sprint = false;          // If the player is dashing
-    
+    private bool sprint = false;          // If the player is sprinting
+    public bool IsSprinting => sprint;
+
 
     private Vector3 currentVelocity = Vector3.zero;
     private int jumpsLeft; // How many jumps until the player can't jump anymore? reset when grounded.
@@ -81,7 +85,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //check if the player is grounded
+        //C heck if the player is grounded
         isGrounded = Physics2D.BoxCast(col.bounds.center, col.bounds.size, 0.0f, Vector2.down, rayLength, groundLayer);
         anim.SetBool("isGrounded", isGrounded);
 
@@ -92,7 +96,7 @@ public class PlayerMovement : MonoBehaviour
             if (ShowDebugRaycast)
                 Debug.DrawRay(col.bounds.center, Vector2.down * rayLength, Color.red); //draws a ray showing ray length
 
-            //Animation
+            //Animation and Sound
             //anim.SetFloat("MoveHorizontal", HorizontalMovement);
             if (HorizontalMovement != 0) // || VerticalMovement != 0)
             {
@@ -111,8 +115,16 @@ public class PlayerMovement : MonoBehaviour
                     playerAudio.WalkSource.Stop();
                 }*/
             }
+            if (idleCountdown <= 0)
+            {
+                Debug.Log("Sniff");
+                StartCoroutine(DoIdleTwo());
+                idleCountdown = timeBetweenIdles;
+            }
 
-            if (!crouch.IsCrouching && !attack.IsSlashing)  // We do nothing when we crouch, and while slashing we have to stay put
+            // Actual Movement
+            // If we are not crouching or attacking
+            if (!crouch.IsCrouching && !attack.IsSlashing)  
             {
                 //Get horizontal and vertical input. See Project Settings > Input Manager
                 HorizontalMovement = Input.GetAxisRaw("Horizontal");
@@ -144,26 +156,35 @@ public class PlayerMovement : MonoBehaviour
                 {
                     idleCountdown = timeBetweenIdles;
                     sprint = true;
-                }     
+                }
                 else
+                {
                     sprint = false;
+                }
+                    
                 anim.SetBool("isRunning", sprint);
             }
-            else
+            else // If we are crouching or attacking
             {
-                idleCountdown = timeBetweenIdles;
-                HorizontalMovement = 0;
-                rb.velocity = Vector2.zero;
+                if (crouch.IsCrouching)
+                {
+                    idleCountdown = timeBetweenIdles;
+                    HorizontalMovement = 0;
+                    rb.velocity = Vector2.zero;
+                }
+                else if (attack.IsSlashing)
+                {
+                    idleCountdown = timeBetweenIdles;
+                    if (isGrounded)
+                    {
+                        HorizontalMovement = 0;
+                        rb.velocity = Vector2.zero;
+                    }
+                    
+                }               
             }
-
-            if (idleCountdown <= 0)
-            {
-                Debug.Log("Sniff");
-                StartCoroutine(DoIdleTwo());
-                idleCountdown = timeBetweenIdles;
-            }
-            
-        }
+     
+        } // End of "if we aren't disabled"
 
         
     }
@@ -209,7 +230,7 @@ public class PlayerMovement : MonoBehaviour
             rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref currentVelocity, Acceleration); //Use smooth damp to simulate acceleration.
         }
 
-        //If your sprite has an idle where they are facing to the side, then you may need to uncomment this :)
+        //For side facing idle
         FlipCheck(move);
 
         if (!isGrounded) //if the player is in the air
@@ -223,6 +244,28 @@ public class PlayerMovement : MonoBehaviour
             {
                 //Make gravity less so they jump higher. Creates variable jump heights.
                 rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
+            }
+
+            if (attack.IsSlashing && !IsAirDashing) // TODO: Integrate vertical gain upon enemy hit
+            {
+                if (rb.velocity.y < 0) // If the player is falling
+                {
+                    rb.AddForce(new Vector2(0, Mathf.Abs(rb.velocity.y)), ForceMode2D.Impulse); // Negate the fall
+                }
+                // Yeah, it's not a good idea to give the player any way of perma-boosting their height, and of the two options:
+                // 1. Allow infinite air slashes without height gain
+                // 2. Allow finite air slashes with height gain
+                // I prefer 1.
+
+                // Waitwaitwaitwait. What if I make it so that you CAN gain height off of slashes, but only when juggling a bad guy?
+                // OPTION 3, THAT SOUNDS RAD AS HECK, AND WILL CREATE COOL PLATFORMING CHALLENGES
+                /*else    // If the player is rising
+                {
+                    rb.AddForce(new Vector2(0, .5f), ForceMode2D.Impulse); // No need to cancel falling velocity, just give a little boost
+                }*/
+
+
+                //rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
             }
 
         }
@@ -265,11 +308,12 @@ public class PlayerMovement : MonoBehaviour
         disabled = true;
         canAirDash = false;
         isDashing = true;
+        
         float originalGravity = rb.gravityScale;
 
         rb.gravityScale = .2f;
         rb.velocity = new Vector2(rb.velocity.x * dashPower, 0); //Stop any previous vertical movement
-        ///yield return new WaitForSeconds(2f);
+        //rb.AddForce(new Vector2(rb.velocity.x * dashPower, 0), ForceMode2D.Impulse);
         yield return new WaitUntil(() => isGrounded);
 
         rb.gravityScale = originalGravity;
