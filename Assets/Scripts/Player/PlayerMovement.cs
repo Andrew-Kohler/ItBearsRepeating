@@ -47,6 +47,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Misc Variables")]
     [SerializeField] private float timeBetweenIdles = 7f;
     private float idleCountdown;
+    private GameObject playerSprite;
 
     private Rigidbody2D rb;
     private Collider2D col;
@@ -59,7 +60,8 @@ public class PlayerMovement : MonoBehaviour
     private float VerticalMovement;
     private Vector2 lastLookDirection;
 
-    private bool isGrounded = false;    // If the player is grounded
+    [SerializeField] private bool isGrounded = false;    // If the player is grounded
+    private bool oldGrounded = false;
     public bool IsGrounded => isGrounded;   // Getter for isGrounded
     private bool sprint = false;          // If the player is sprinting
     public bool IsSprinting => sprint;
@@ -71,10 +73,14 @@ public class PlayerMovement : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        playerSprite = GameObject.Find("Bear Sprite");
+       
+        rend = playerSprite.GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
+        anim = playerSprite.GetComponent<Animator>(); //Get Animator Component
+
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
-        rend = GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
-        anim = GetComponent<Animator>(); //Get Animator Component
+        
         crouch = GetComponent<PlayerCrouch>();
         attack = GetComponent<PlayerAttack>();
         //playerAudio = GetComponent<PlayerAudio>();
@@ -85,7 +91,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //C heck if the player is grounded
+        //Check if the player is grounded
         isGrounded = Physics2D.BoxCast(col.bounds.center, col.bounds.size, 0.0f, Vector2.down, rayLength, groundLayer);
         anim.SetBool("isGrounded", isGrounded);
 
@@ -132,6 +138,7 @@ public class PlayerMovement : MonoBehaviour
                 if (canJump && Input.GetButtonDown("Jump") && isGrounded) //If the player jumps and is grounded
                 {
                     idleCountdown = timeBetweenIdles;
+                    isGrounded = false;
                     Jump();
                 }
                 else if (canJump && Input.GetButtonDown("Jump") && NumberOfJumps > 1 && jumpsLeft > 1) // Or if the player has jumps left
@@ -239,11 +246,20 @@ public class PlayerMovement : MonoBehaviour
             {
                 //Make gravity harsher so they fall faster.
                 rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1) * Time.deltaTime;
+
+                if (playerSprite.transform.rotation.eulerAngles.y > -20)
+                    playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y); // Consider adding a modifier to slow this down
             }
-            else if (rb.velocity.y > 0 && !Input.GetButton("Jump")) //if player is jumping and holding jump button
+            else if (rb.velocity.y > 0)//  && !Input.GetButton("Jump")) //if player is jumping and holding jump button
             {
-                //Make gravity less so they jump higher. Creates variable jump heights.
-                rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
+                if(playerSprite.transform.rotation.eulerAngles.y > 0)
+                   playerSprite.transform.Rotate(Vector3.forward * (rb.velocity.y));
+
+                if (!Input.GetButton("Jump"))
+                {
+                    //Make gravity less so they jump higher. Creates variable jump heights.
+                    rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
+                }
             }
 
             if (attack.IsSlashing && !IsAirDashing) // TODO: Integrate vertical gain upon enemy hit
@@ -263,11 +279,13 @@ public class PlayerMovement : MonoBehaviour
                 {
                     rb.AddForce(new Vector2(0, .5f), ForceMode2D.Impulse); // No need to cancel falling velocity, just give a little boost
                 }*/
-
-
-                //rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
             }
 
+        }
+
+        if (HitTheGroundCheck(isGrounded))  // Resets rotation when we hit the ground
+        {
+            playerSprite.transform.rotation = Quaternion.Euler(0, 0, 0);
         }
     }
 
@@ -276,9 +294,13 @@ public class PlayerMovement : MonoBehaviour
         idleCountdown = timeBetweenIdles;
         rb.velocity = new Vector2(rb.velocity.x, 0); //Stop any previous vertical movement
         rb.AddForce(Vector2.up * JumpForce, ForceMode2D.Impulse); //Add force upwards as an impulse.
+        if(SpriteFacingRight)
+            playerSprite.transform.rotation = Quaternion.Euler(0, 0, 20);
+        else
+            playerSprite.transform.rotation = Quaternion.Euler(0, 0, -20);
         //if (playerAudio && playerAudio != null)
         //{
-          //  playerAudio.JumpSource.Play();
+        //  playerAudio.JumpSource.Play();
         //}
     }
     private void FlipCheck(float move)
@@ -300,6 +322,16 @@ public class PlayerMovement : MonoBehaviour
         Vector3 currentScale = transform.localScale;
         currentScale.x *= -1;
         transform.localScale = currentScale;
+    }
+
+    private bool HitTheGroundCheck(bool newGrounded)
+    {
+        bool returnVal = false;
+        if (newGrounded && !oldGrounded)    // If we are grounded, and we weren't last time
+            returnVal = true;
+        oldGrounded = newGrounded;
+        return returnVal;
+
     }
 
     // Coroutines -----------------------------------------------

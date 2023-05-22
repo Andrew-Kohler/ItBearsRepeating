@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerAttack : MonoBehaviour
 {
     [SerializeField] GameObject slashbox;
+    [SerializeField] GameObject playerSprite;
 
     private Collider2D slashCol;
     private SpriteRenderer slashRend;
@@ -56,10 +57,13 @@ public class PlayerAttack : MonoBehaviour
 
     void Start()
     {
+        playerSprite = GameObject.Find("Bear Sprite");
+
         slashCol = slashbox.GetComponent<Collider2D>();      //Get slashbox collider component
         slashRend = slashbox.GetComponent<SpriteRenderer>(); //Get slashbox sprite renderer Component
         slashAnim = slashbox.GetComponent<Animator>();      // Get slashbox animator component
-        anim = GetComponent<Animator>();            //Get Animator component
+        anim = playerSprite.GetComponent<Animator>();            //Get Animator component
+
         move = GetComponent<PlayerMovement>();      // Get Movement component
 
         slashCol.enabled = false;
