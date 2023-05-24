@@ -13,27 +13,31 @@ public class PlayerAttack : MonoBehaviour
     private Animator slashAnim;
     private PlayerMovement move;
 
+    // Knockback is passed in the form of a vector that's used to apply a force
+
     [Header("Slash 1 Stats")]
     [SerializeField] private float slash1GroundDMG = 1f;
     [SerializeField] private float slash1AirDMG = 1f;
-    [SerializeField] private float slash1GroundKnockback = .2f;
-    [SerializeField] private float slash1AirKnockback = .2f;
+    [SerializeField] private Vector3 slash1GroundKnockback = new Vector3(1f, 1f, 0f);
+    [SerializeField] private Vector3 slash1AirKnockback = new Vector3(1f, 1f, 0f);
     [Header("Slash 2 Stats")]
     [SerializeField] private float slash2GroundDMG = 1f;
     [SerializeField] private float slash2AirDMG = 1f;
-    [SerializeField] private float slash2GroundKnockback = .2f;
-    [SerializeField] private float slash2AirKnockback = .2f;
+    [SerializeField] private Vector3 slash2GroundKnockback = new Vector3(1f, 1f, 0f);
+    [SerializeField] private Vector3 slash2AirKnockback = new Vector3(1f, 1f, 0f);
     [Header("Slash 3 Stats")]
     [SerializeField] private float slash3GroundDMG = 1f;
     [SerializeField] private float slash3AirDMG = 1f;
-    [SerializeField] private float slash3GroundKnockback = .2f;
-    [SerializeField] private float slash3AirKnockback = .2f;
+    [SerializeField] private Vector3 slash3GroundKnockback = new Vector3(1f, 1f, 0f);
+    [SerializeField] private Vector3 slash3AirKnockback = new Vector3(1f, 1f, 0f);
     [Header("Air Dash Stats")]
     [SerializeField] private float airDashDMG = 1f;
-    [SerializeField] private float airDashKnockback = 1f;
+    [SerializeField] private Vector3 airDashKnockback = new Vector3(1f, 1f, 0f);
 
     private float currentDMG;           // These are the values that we can change internally in this class and then pass along to other classes that need them
-    private float currentKnockback;
+    private Vector3 currentKnockback;
+    public float DMG => currentDMG;
+    public Vector3 Knockback => currentKnockback;
 
     private bool activeCoroutine;
     public bool IsSlashing => activeCoroutine;  // Used to halt grounded movement in PlayerMovement (grounded slashes mean you aren't moving)
@@ -134,7 +138,24 @@ public class PlayerAttack : MonoBehaviour
         activeCoroutine = true;
         slash1Active = true;
 
-        Debug.Log("Slash 1");
+        if (move.IsGrounded)
+        {
+            currentDMG = slash1GroundDMG;
+            currentKnockback = slash1GroundKnockback;
+        }
+        else
+        {
+            currentDMG = slash1AirDMG;
+            currentKnockback = slash1AirKnockback;
+        }
+
+        if (!move.RightFacing)  // Account for direction
+        {
+            currentKnockback.x = currentKnockback.x * -1;
+        }
+
+        //Debug.Log("Slash 1");
+
         slashCol.enabled = true;
         slashRend.color = Color.white;
         slashAnim.Play("Slash1");
@@ -155,7 +176,23 @@ public class PlayerAttack : MonoBehaviour
         activeCoroutine = true;
         slash2Active = true;
 
-        Debug.Log("Slash 2");
+        if (move.IsGrounded)
+        {
+            currentDMG = slash2GroundDMG;
+            currentKnockback = slash2GroundKnockback;
+        }
+        else
+        {
+            currentDMG = slash2AirDMG;
+            currentKnockback = slash2AirKnockback;
+        }
+
+        if (!move.RightFacing)  // Account for direction
+        {
+            currentKnockback.x = currentKnockback.x * -1;
+        }
+
+        //Debug.Log("Slash 2");
         slashCol.enabled = true;
         slashRend.color = Color.white;
         slashAnim.Play("Slash2");
@@ -176,7 +213,25 @@ public class PlayerAttack : MonoBehaviour
         activeCoroutine = true;
         slash3Active = true;
 
-        Debug.Log("Slash 3");
+        if (move.IsGrounded)    // Setting DMG and Knockback
+        {
+            currentDMG = slash3GroundDMG;
+            currentKnockback = slash3GroundKnockback;
+        }
+        else
+        {
+            currentDMG = slash3AirDMG;
+            currentKnockback = slash3AirKnockback;
+        }
+
+        if (!move.RightFacing)  // Account for direction
+        {
+            currentKnockback.x = currentKnockback.x * -1;
+        }
+
+
+
+        //Debug.Log("Slash 3");
         slashCol.enabled = true;
         slashRend.color = Color.white;
         slashAnim.Play("Slash3");
@@ -195,6 +250,7 @@ public class PlayerAttack : MonoBehaviour
         slash1Done = false;
         slash2Done = false;
         slash3Done = false;
+        slashCol.enabled = false;
         yield return new WaitForSeconds(.1f);
         onCooldown = false;
         yield return null;
@@ -206,10 +262,18 @@ public class PlayerAttack : MonoBehaviour
         // That's it. That's gotta be it. When slashing, I screw with some of the grav stuff
         // As long as I wasn't screwing with it for too long, it didn't matter
         // But since I'm slashing for so long, we are getting FUNKADELIC
+        // Keeping this comment until I'm done tuning and retooling so I know what's up
         airDashActive = true;
-        // Basically just activate the hitbox and play the animation until we touch grass
-        // The only thing left that I require is the touch grass variable and zoom animation
-        Debug.Log("Air Dash");
+
+        currentDMG = airDashDMG;
+        currentKnockback = airDashKnockback;
+
+        if (!move.RightFacing)  // Account for direction
+        {
+            currentKnockback.x = currentKnockback.x * -1;
+        }
+
+        //Debug.Log("Air Dash");
         slashCol.enabled = true;
         slashRend.color = Color.white;
         slashAnim.Play("AirDash");

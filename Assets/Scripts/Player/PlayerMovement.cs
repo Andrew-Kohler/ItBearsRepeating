@@ -16,6 +16,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float Acceleration = .05f;
     // This means that you're 1D character is facing left by default (1D means you only face left or right)")]
     [SerializeField] private bool SpriteFacingRight = true;
+    public bool RightFacing => SpriteFacingRight;
 
     [Header("Jump Variables")]
     //Controls whether your player can jump or not
@@ -23,7 +24,7 @@ public class PlayerMovement : MonoBehaviour
     //The force of your jump (Be sure to have your gravity set to 1 for side-scroller
     [SerializeField] private float JumpForce = 7f;
     /*//The force of your jump (Be sure to have your gravity set to 1 for side-scroller
-    [SerializeField] private float ShashSuspendForce = 2f;*/
+    [SerializeField] private float SlashSuspendForce = 2f;*/
     //Number of jumps your player can do each time they touch the ground. (2 = Double jump)
     [SerializeField] private int NumberOfJumps = 1;
     // The multiplier at which you fall down (used for smooth movement) and it can't be below 1
