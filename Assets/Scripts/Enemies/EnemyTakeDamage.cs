@@ -26,7 +26,20 @@ public class EnemyTakeDamage : MonoBehaviour
                 enemyHealth.TakeDamage(collision.gameObject.GetComponentInParent<PlayerAttack>().DMG);
                 enemyMovement.TakeKnockback(collision.gameObject.GetComponentInParent<PlayerAttack>().Knockback);
             }
-                
+
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player Hitbox"))   // If we touch a player-controlled hitbox
+        {
+            damageFlash.CallDamageFlash();
+            if (collision.gameObject.GetComponent<SmackableAttack>() != null)
+            {
+                enemyHealth.TakeDamage(collision.gameObject.GetComponent<SmackableAttack>().DMG);
+                enemyMovement.TakeKnockback(collision.gameObject.GetComponent<SmackableAttack>().Knockback);
+            }
         }
     }
 }

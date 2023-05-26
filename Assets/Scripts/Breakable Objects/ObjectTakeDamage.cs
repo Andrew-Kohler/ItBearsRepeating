@@ -27,4 +27,16 @@ public class ObjectTakeDamage : MonoBehaviour
 
         }
     }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player Hitbox"))   // If we touch a player-controlled hitbox
+        {
+            damageFlash.CallDamageFlash();
+            if (collision.gameObject.GetComponent<SmackableAttack>() != null)
+            {
+                objectHealth.TakeDamage(collision.gameObject.GetComponent<SmackableAttack>().DMG);
+            }
+        }
+    }
 }
