@@ -158,9 +158,26 @@ public class PlayerAttack : MonoBehaviour
 
         slashCol.enabled = true;
         slashRend.color = Color.white;
-        slashAnim.Play("Slash1");
+        slashAnim.Play("Slash1", 0, 0);
+        if (move.IsGrounded)    // Play correct bear animation
+        {
+            anim.Play("Slash1Ground", 0, 0);
+        }
+        else
+        {
+
+        }
+        
         yield return new WaitForSeconds(.2f);
 
+        if (move.IsGrounded)
+        {
+            anim.Play("Idle");
+        }
+        else
+        {
+            anim.Play("Jump");
+        }
         activeCoroutine = false;
         slash1Active = false;
         slash1Done = true;
@@ -276,7 +293,7 @@ public class PlayerAttack : MonoBehaviour
         //Debug.Log("Air Dash");
         slashCol.enabled = true;
         slashRend.color = Color.white;
-        slashAnim.Play("AirDash");
+        slashAnim.Play("AirDash", 0, 0);
         //yield return new WaitForSeconds(1f);
         yield return new WaitUntil(() => !move.IsAirDashing);  // We keep going until we hit the dirt
 
