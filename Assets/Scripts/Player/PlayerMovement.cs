@@ -148,7 +148,7 @@ public class PlayerMovement : MonoBehaviour
                     jumpsLeft--;
                 }
 
-                if (canAirDash && Input.GetButtonDown("Slash") && !isGrounded && sprint) // If the player does the air dash
+                if (canAirDash && Input.GetButtonDown("Slash") && !isGrounded && sprint && HorizontalMovement != 0) // If the player does the air dash
                 {
                     StartCoroutine(DoAirDash());
                 }
@@ -243,18 +243,26 @@ public class PlayerMovement : MonoBehaviour
 
         if (!isGrounded) //if the player is in the air
         {
-            if (rb.velocity.y < 0) //if player is falling
+            //Debug.Log(playerSprite.transform.rotation.eulerAngles.z);
+            if (rb.velocity.y <= 0) //if player is falling
             {
                 //Make gravity harsher so they fall faster.
                 rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1) * Time.deltaTime;
-
-                if (playerSprite.transform.rotation.eulerAngles.y > -20)
-                    playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y); // Consider adding a modifier to slow this down
+                if (SpriteFacingRight)
+                {
+                    if (playerSprite.transform.rotation.eulerAngles.z > -20)
+                         playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
+                }
+                else
+                {
+                    if ((playerSprite.transform.rotation.eulerAngles.z > 340) || (playerSprite.transform.rotation.eulerAngles.z < 20))
+                        playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
+                }
             }
             else if (rb.velocity.y > 0)//  && !Input.GetButton("Jump")) //if player is jumping and holding jump button
             {
-                if(playerSprite.transform.rotation.eulerAngles.y > 0)
-                   playerSprite.transform.Rotate(Vector3.forward * (rb.velocity.y));
+                if (playerSprite.transform.rotation.eulerAngles.z > 0)
+                   playerSprite.transform.Rotate(Vector3.forward * (-rb.velocity.y) / 4);
 
                 if (!Input.GetButton("Jump"))
                 {

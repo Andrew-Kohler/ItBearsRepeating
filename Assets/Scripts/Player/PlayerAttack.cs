@@ -129,6 +129,10 @@ public class PlayerAttack : MonoBehaviour
                 slashCol.enabled = false;
                 slashRend.color = Color.clear;
             }
+            else if (airDashActive)
+            {
+                playerSprite.transform.rotation = Quaternion.Euler(0, 0, 0);
+            }
         }
     }
 
@@ -165,10 +169,10 @@ public class PlayerAttack : MonoBehaviour
         }
         else
         {
-
+            playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
         }
         
-        yield return new WaitForSeconds(.2f);
+        yield return new WaitForSeconds(.3f);
 
         if (move.IsGrounded)
         {
@@ -213,7 +217,24 @@ public class PlayerAttack : MonoBehaviour
         slashCol.enabled = true;
         slashRend.color = Color.white;
         slashAnim.Play("Slash2");
-        yield return new WaitForSeconds(.2f);
+        if (move.IsGrounded)    // Play correct bear animation
+        {
+            anim.Play("Slash2Ground", 0, 0);
+        }
+        else
+        {
+            playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
+        }
+        yield return new WaitForSeconds(.3f);
+
+        if (move.IsGrounded)
+        {
+            anim.Play("Idle");
+        }
+        else
+        {
+            anim.Play("Jump");
+        }
 
         activeCoroutine = false;
         slash2Active = false;
@@ -252,6 +273,14 @@ public class PlayerAttack : MonoBehaviour
         slashCol.enabled = true;
         slashRend.color = Color.white;
         slashAnim.Play("Slash3");
+        if (move.IsGrounded)    // Play correct bear animation
+        {
+            //anim.Play("Slash1Ground", 0, 0);
+        }
+        else
+        {
+            playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
+        }
         yield return new WaitForSeconds(.2f);
 
         activeCoroutine = false;
@@ -294,10 +323,11 @@ public class PlayerAttack : MonoBehaviour
         slashCol.enabled = true;
         slashRend.color = Color.white;
         slashAnim.Play("AirDash", 0, 0);
+        anim.Play("SlashAirDash", 0, 0);
         //yield return new WaitForSeconds(1f);
         yield return new WaitUntil(() => !move.IsAirDashing);  // We keep going until we hit the dirt
 
-
+        anim.Play("Idle", 0, 0);
         activeCoroutine = false;
         airDashActive = false;
         slashAnim.StopPlayback();

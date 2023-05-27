@@ -11,10 +11,16 @@ public class PlayerCrouch : MonoBehaviour
 
     [SerializeField] private float crouchHeight = .5f;  // The height we shrink to when crouching
     private Vector2 normalHeight;
+    private Vector2 normalSpriteHeight;
+    private Vector3 normalSpritePosition;
+
+    [SerializeField] GameObject playerSprite;  // We need this to cancel out the squish on it so the animation looks normal
+
 
     void Start()
     {
         normalHeight = transform.localScale;
+        normalSpriteHeight = playerSprite.transform.localScale;
     }
 
     void Update()
@@ -26,6 +32,8 @@ public class PlayerCrouch : MonoBehaviour
             if (transform.localScale.y != crouchHeight)
             {
                 transform.localScale = new Vector2(normalHeight.x, crouchHeight);
+                playerSprite.transform.localScale = new Vector2(normalSpriteHeight.x, normalSpriteHeight.y * 2);
+                playerSprite.transform.localPosition = new Vector3(normalSpritePosition.x, normalSpritePosition.y + normalSpritePosition.y, normalSpritePosition.z); // = normalSpritePosition;
             }
             
         }
@@ -35,7 +43,15 @@ public class PlayerCrouch : MonoBehaviour
             if (transform.localScale.y != normalHeight.y)
             {
                 transform.localScale = normalHeight;
+                playerSprite.transform.localScale = normalSpriteHeight;
+                playerSprite.transform.localPosition = normalSpritePosition;
             }
         }
+
+        if (!isCrouching)
+        {
+            normalSpritePosition = playerSprite.transform.localPosition;
+        }
+
     }
 }
