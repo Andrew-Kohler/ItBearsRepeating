@@ -169,6 +169,7 @@ public class PlayerAttack : MonoBehaviour
         }
         else
         {
+            anim.Play("Slash1Air", 0, 0);
             playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
         }
         
@@ -267,7 +268,12 @@ public class PlayerAttack : MonoBehaviour
             currentKnockback.x = currentKnockback.x * -1;
         }
 
-
+        if (move.IsGrounded)
+        {
+            anim.Play("Slash3Ground", 0, 0);
+            yield return new WaitForSeconds(.5f);
+        }
+        
 
         //Debug.Log("Slash 3");
         slashCol.enabled = true;
@@ -281,7 +287,16 @@ public class PlayerAttack : MonoBehaviour
         {
             playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
         }
-        yield return new WaitForSeconds(.2f);
+        yield return new WaitForSeconds(.3f);
+
+        if (move.IsGrounded)
+        {
+            anim.Play("Idle");
+        }
+        else
+        {
+            anim.Play("Jump");
+        }
 
         activeCoroutine = false;
         slash3Active = false;
