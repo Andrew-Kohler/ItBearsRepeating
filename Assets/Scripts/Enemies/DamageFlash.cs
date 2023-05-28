@@ -15,6 +15,13 @@ public class DamageFlash : MonoBehaviour
     {
         sr = GetComponent<SpriteRenderer>();    
         material = sr.material;
+       
+    }
+
+    private void Update()
+    {
+        //material.mainTexture = sr.sprite.texture;
+        material.SetTexture("MainTex", sr.sprite.texture);
     }
 
     // Public methods

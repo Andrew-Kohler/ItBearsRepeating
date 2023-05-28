@@ -4,9 +4,8 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-    enum EnemyType { Sasha, Melee, Laser, Rocket };    // Determines movement behavior
+    enum EnemyType { Sasha, Melee, Laser, Rocket};    // Determines movement behavior
     [Header("Movement Variables")]
-    [SerializeField] EnemyType enemyType = EnemyType.Melee;
     //This is whether or not the enemy is allowed to move
     [SerializeField] private bool disabled = false;
     // The speed at which the enemy moves
@@ -17,6 +16,8 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private bool SpriteFacingRight = true;
 
     [Header("Jump Variables")]
+    [SerializeField] private bool isGrounded = false;    // If the player is grounded
+    [SerializeField] private bool nearLedge = false;    // If the player is close enough to a ledge that jumping is warranted
     //Controls whether your player can jump or not
     [SerializeField] private bool canJump = true;
     //The force of your jump (Be sure to have your gravity set to 1 for side-scroller
@@ -26,30 +27,162 @@ public class EnemyMovement : MonoBehaviour
     // The multiplier at which you fall down (used for smooth movement) and it can't be below 1
     [SerializeField] private float FallMultiplier = 3f;
 
+    [Header("Raycast Jumping Variables")]
+    // Will show a red ray drawn from center of your sprite, it should extend from your box collider to touch the ground. If it doesn't reach the ground, change rayLength until it does. If you cannot see it, click the Gizmos button in the top right of the Game Window.
+    [SerializeField] private bool ShowDebugRaycast = false;
+    // Select your ground layer so that the raycast can detect it
+    [SerializeField] private LayerMask groundLayer;
+    // The length of the ray used to detect the ground.
+    [SerializeField] private float rayLength = .5f;
+    // The length of the ray used to detect a ledge
+    [SerializeField] private float ledgeRayLength = 1f;
+
+    [Header("Enemy-Specific Variables")]
+    [SerializeField] EnemyType enemyType = EnemyType.Melee;
+    [SerializeField] private bool act = false;          // Whether the enemy's AI is enabled
+    [SerializeField] private bool attack = false;       // Whether the enemy is attacking or not (determined by proximity to player)
+    [SerializeField] private float DistanceToStartActing = 10f; // How close the player should be to trigger the enemy to start doing something
+    [SerializeField] private float DistanceToApproachTo = 2f;   // How close the enemy should get to the player before attacking
+
+    [Header("Melee Variables")]
+    [Header("Laser Variables")]
+    [Header("Rocket Variables")]
+
+    private float HorizontalMovement;
+    private Vector2 lastLookDirection;
+
+    private Vector3 currentVelocity = Vector3.zero;
+
+    private float jumpCooldown;
+    private float jumpCooldownTime = .6f;   // To ensure that nobody gets stuck in an endless cycle of half-jumps
 
     private Rigidbody2D rb;
     private Collider2D col;
+    private SpriteRenderer rend;
     private Animator anim;
+
+    [SerializeField] private GameObject enemySprite;    // The enemy sprite
+    private GameObject bear;    // The player
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
+
+        rend = enemySprite.GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
+        anim = enemySprite.GetComponent<Animator>(); //Get Animator Component
+
+        bear = GameObject.Find("Bear");   // Find the player (distance calcs will be important here)
     }
 
     // Update is called once per frame
     void Update()
     {
+        //Check if the enemy is grounded
+        isGrounded = Physics2D.BoxCast(col.bounds.center, col.bounds.size, 0.0f, Vector2.down, rayLength, groundLayer);
+        anim.SetBool("isGrounded", isGrounded);
+
+        if (ShowDebugRaycast)
+        {
+            Debug.DrawRay(col.bounds.center, Vector2.down * rayLength, Color.red); // Draw the rays we're working with
+            Debug.DrawRay(col.bounds.center, Vector2.left * ledgeRayLength, Color.green); 
+            Debug.DrawRay(col.bounds.center, Vector2.right * ledgeRayLength, Color.blue); 
+        }
+           
+
+        if (!disabled) //If player movement is NOT disabled
+        {
+            // If the player is in range and act is false
+            //Debug.Log(Vector2.Distance(transform.position, bear.transform.position));
+            if (!act && Vector2.Distance(transform.position, bear.transform.position) < DistanceToStartActing)
+            {
+                // Act is now true
+                // This is what starts the enemy moving - once the player has come in range, enemies currently don't ever stop chasing
+                act = true;
+            }
+
+
+            if (act) // If act is true
+            {
+                if (HorizontalMovement != 0) // || VerticalMovement != 0)
+                {
+                    anim.SetBool("isMovingH", true);
+                    /*if (playerAudio && !playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
+                    {
+                        playerAudio.WalkSource.Play();
+                    }*/
+                }
+                else
+                {
+                    anim.SetBool("isMovingH", false);
+                    /*if (playerAudio && playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
+                    {
+                        playerAudio.WalkSource.Stop();
+                    }*/
+                }
+
+                if (Vector2.Distance(transform.position, bear.transform.position) > DistanceToApproachTo) // If move we still must
+                {
+                    jumpCooldown -= Time.deltaTime;
+                    if (transform.position.x > bear.transform.position.x)    // Finding which direction to move
+                    {
+                        HorizontalMovement = -1;    // If we're right of the player
+                    }
+                    else
+                    {
+                        HorizontalMovement = 1; // If we're left of the player
+                    }
+
+                    if (SpriteFacingRight)
+                    {
+                        nearLedge = Physics2D.BoxCast(col.bounds.center, col.bounds.size, 0.0f, Vector2.right, ledgeRayLength, groundLayer);
+                    }
+                    else
+                    {
+                        nearLedge = Physics2D.BoxCast(col.bounds.center, col.bounds.size, 0.0f, Vector2.left, ledgeRayLength, groundLayer);
+                    }
+                   
+                    if (canJump && isGrounded && nearLedge && jumpCooldown <= 0) //If the player jumps and is grounded
+                    {
+                        jumpCooldown = jumpCooldownTime;
+                        isGrounded = false;
+                        Jump();
+                    }
+                }
+                else
+                {
+                    HorizontalMovement = 0;
+                }
+
+                
+
+            }
+        } // End of not-disabled behavior
         
+
+
     }
 
     private void FixedUpdate()
     {
-        
+        if (act && enemyType != EnemyType.Sasha)  // If act is true
+        {
+            MoveSideScroller(HorizontalMovement);
+        }
+
     }
 
     // Public methods ----------------------------------------
-
+    public void DisablePlayer(bool isDisabled)  // Disables the enemy movement (may prove useful for applying hitstun)
+    {
+        disabled = isDisabled;
+        if (disabled)
+        {
+            HorizontalMovement = 0;
+            rb.velocity = Vector2.zero;
+            anim.SetBool("isMovingH", false);
+        }
+    }
     public void TakeKnockback(Vector3 knockback)
     {
         rb.velocity = new Vector2(0, 0);
@@ -57,6 +190,55 @@ public class EnemyMovement : MonoBehaviour
     }
 
     // Private methods ----------------------------------------
+
+    private void MoveSideScroller(float move)
+    {
+        if (move != 0)
+        {
+            lastLookDirection = new Vector2(move, 0);
+        }
+
+        // This will need a conditional for hitstun, but for rn, we are ok
+        Vector3 targetVelocity = new Vector3(move * Speed, rb.velocity.y); //Make target velocity how we want to move.
+        rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref currentVelocity, Acceleration); //Use smooth damp to simulate acceleration.
+
+
+        FlipCheck(move);
+
+        if (!isGrounded) //if the player is in the air
+        {
+            //Debug.Log(playerSprite.transform.rotation.eulerAngles.z);
+            if (rb.velocity.y <= 0) //if player is falling
+            {
+                //Make gravity harsher so they fall faster.
+                rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1) * Time.deltaTime;
+                /*if (SpriteFacingRight)
+                {
+                    if (playerSprite.transform.rotation.eulerAngles.z > -20)
+                        playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
+                }
+                else
+                {
+                    if ((playerSprite.transform.rotation.eulerAngles.z > 340) || (playerSprite.transform.rotation.eulerAngles.z < 20))
+                        playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
+                }*/
+            }
+            else if (rb.velocity.y > 0)//  && !Input.GetButton("Jump")) //if player is jumping and holding jump button
+            {
+                /*if (playerSprite.transform.rotation.eulerAngles.z > 0)
+                    playerSprite.transform.Rotate(Vector3.forward * (-rb.velocity.y) / 4);*/
+
+                /*if (!Input.GetButton("Jump"))
+                {
+                    //Make gravity less so they jump higher. Creates variable jump heights.
+                    rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
+                }*/
+            }
+        }
+
+    }
+
+
     private void Jump()
     {
         rb.velocity = new Vector2(rb.velocity.x, 0); //Stop any previous vertical movement
@@ -66,11 +248,39 @@ public class EnemyMovement : MonoBehaviour
         //  playerAudio.JumpSource.Play();
         //}
     }
+    private void FlipCheck(float move)
+    {
+        //Flip the sprite so that they are facing the correct way when moving
+        if (move > 0 && !SpriteFacingRight) //if moving to the right and the sprite is not facing the right.
+        {
+            Flip();
+        }
+        else if (move < 0 && SpriteFacingRight) //if moving to the left and the sprite is facing right
+        {
+            Flip();
+        }
+    }
+
+    private void Flip()
+    {
+        SpriteFacingRight = !SpriteFacingRight; //flip whether the sprite is facing right
+        anim.SetBool("isFacingRight", SpriteFacingRight);
+        /*if (rend.flipX)
+        {
+            rend.flipX = false;
+        }
+        else
+        {
+            rend.flipX = true;
+        }*/
+        Vector3 currentScale = transform.localScale;
+        currentScale.x *= -1;
+        transform.localScale = currentScale;
+    }
 
     // Coroutines ----------------------------------------
 
-    // So...knockback. Add a force in the opposite direction they're facing?
-    // I could actually pass knockback as a vector to have more control over the angle + proportion
-    // Ughhh, that sounds so awesome, let's do that
-    // Sweet, did that
+    // Ok, jumping over 1 block tile time
+    // ...I mean, just a raycast facing front is probs the best way
+    // If the raycast gets pinged on terrain, jump
 }

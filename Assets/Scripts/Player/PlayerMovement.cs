@@ -67,7 +67,6 @@ public class PlayerMovement : MonoBehaviour
     private bool sprint = false;          // If the player is sprinting
     public bool IsSprinting => sprint;
 
-
     private Vector3 currentVelocity = Vector3.zero;
     private int jumpsLeft; // How many jumps until the player can't jump anymore? reset when grounded.
 
