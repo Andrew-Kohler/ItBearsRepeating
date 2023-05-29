@@ -7,6 +7,9 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement Variables")]
     //This is whether or not the player can actually move
     [SerializeField] private bool disabled = false;
+    public bool Disabled => disabled;
+    [SerializeField] private bool hitstun = false;
+    public bool Hitstun => hitstun;
     // The speed at which the player moves
     [SerializeField] private float Speed = 2.7f;
     // The multiplier on speed for sprinting
@@ -69,6 +72,9 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector3 currentVelocity = Vector3.zero;
     private int jumpsLeft; // How many jumps until the player can't jump anymore? reset when grounded.
+
+    PhysicsMaterial2D pMaterial;
+    [SerializeField] PhysicsMaterial2D pMaterialBouncy;
 
     // Start is called before the first frame update
     void Start()
@@ -208,12 +214,21 @@ public class PlayerMovement : MonoBehaviour
         if (disabled)
         {
             rb.velocity = Vector2.zero;
-            anim.SetBool("isMoving", false);
+            anim.SetBool("isMovingH", false);
         }
     }
     public Vector2 GetLastLookDirection()
     {
         return lastLookDirection;
+    }
+
+    public void TakeKnockback(Vector3 knockback)
+    {
+        hitstun = true;
+        DisablePlayer(true);
+        rb.AddForce(knockback, ForceMode2D.Impulse);
+        StartCoroutine(DoHitstun(2f));
+
     }
 
     // Private Methods ----------------------------------------
@@ -230,7 +245,7 @@ public class PlayerMovement : MonoBehaviour
         else
             SpeedMult = 1;
 
-        if (!isDashing && !GetComponent<PlayerCrouch>().IsCrouching)    // If we aren't dashing or crouching
+        if (!isDashing && !GetComponent<PlayerCrouch>().IsCrouching && !disabled)    // If we aren't dashing or crouching
         {
             Vector3 targetVelocity = new Vector3(move * Speed * SpeedMult, rb.velocity.y); //Make target velocity how we want to move.
 
@@ -287,6 +302,10 @@ public class PlayerMovement : MonoBehaviour
                 {
                     rb.AddForce(new Vector2(0, .5f), ForceMode2D.Impulse); // No need to cancel falling velocity, just give a little boost
                 }*/
+
+                // Ok, we're back:
+                // How do I confirm that I got a hit?
+                // I could put a script on the player hitbox, that sounds easiest
             }
 
         }
@@ -345,7 +364,7 @@ public class PlayerMovement : MonoBehaviour
     // Coroutines -----------------------------------------------
     IEnumerator DoAirDash()
     {
-        disabled = true;
+        disabled = true; // A CONTRADICTION IN TERMS, BY MY HAT AND SCARF
         canAirDash = false;
         isDashing = true;
         
@@ -368,6 +387,17 @@ public class PlayerMovement : MonoBehaviour
         anim.Play("Idle2");
         yield return new WaitForSeconds(2.583f);
         anim.Play("Idle");
+    }
+
+    IEnumerator DoHitstun(float stunVal)    // Hitstun lasts for a certain amt of time, but is only broken once the enemy is grounded again
+    {
+        col.sharedMaterial = pMaterialBouncy;
+        yield return new WaitForSeconds(stunVal);
+        yield return new WaitUntil(() => isGrounded);
+
+        col.sharedMaterial = pMaterial;
+        hitstun = false;
+        DisablePlayer(false);
     }
 
 }

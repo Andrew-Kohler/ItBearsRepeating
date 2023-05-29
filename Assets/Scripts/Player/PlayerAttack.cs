@@ -89,7 +89,7 @@ public class PlayerAttack : MonoBehaviour
             StartCoroutine(DoPostComboDelay());
         }
         
-        if (!GetComponent<PlayerCrouch>().IsCrouching)  // We do nothing when we crouch
+        if (!GetComponent<PlayerCrouch>().IsCrouching && !move.Hitstun)  // We do nothing when we crouch, and especially not when disabled
         {
             if (Input.GetButtonDown("Slash") && !onCooldown && !airDashActive)    // If we try to slash and aren't on cooldown
             {
@@ -111,17 +111,7 @@ public class PlayerAttack : MonoBehaviour
                     {
                         StartCoroutine(DoSlash3());
                     }
-                }
-                
-                /*if (!move.IsGrounded && move.CanAirDash && move.IsSprinting) // Air dash
-                {
-                    StartCoroutine(DoAirDash());
-                }
-                else    // Regular slashing
-                {*/
-
-                //}
-
+                }         
 
             }
             else if (!activeCoroutine)  // If we aren't slashing
@@ -173,7 +163,7 @@ public class PlayerAttack : MonoBehaviour
             playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
         }
         
-        yield return new WaitForSeconds(.3f);
+        yield return new WaitForSeconds(.2f);
 
         if (move.IsGrounded)
         {
@@ -226,7 +216,7 @@ public class PlayerAttack : MonoBehaviour
         {
             playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
         }
-        yield return new WaitForSeconds(.3f);
+        yield return new WaitForSeconds(.2f);
 
         if (move.IsGrounded)
         {

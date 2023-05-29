@@ -8,7 +8,7 @@ public class SmackableGetHit : MonoBehaviour
     Collider2D col;
 
     DamageFlash damageFlash;
-    EnemyHealth enemyHealth;
+    Health smackableHealth;
     SmackableAnim smackableAnim;
 
     [Header("Raycast Collision Check Variables")]
@@ -29,7 +29,7 @@ public class SmackableGetHit : MonoBehaviour
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
 
-        enemyHealth = GetComponent<EnemyHealth>();
+        smackableHealth = GetComponent<Health>();
         damageFlash = GetComponentInChildren<DamageFlash>();
         smackableAnim = GetComponentInChildren<SmackableAnim>();
 
@@ -57,6 +57,7 @@ public class SmackableGetHit : MonoBehaviour
         if (collision.CompareTag("Player Hitbox"))   // If we touch a player-controlled hitbox
         {
             gameObject.tag = "Player Hitbox";
+            gameObject.layer = LayerMask.NameToLayer("Smackable");
             damageFlash.CallDamageFlash();
             if (GetHitDirection(collision))
             {
@@ -69,7 +70,7 @@ public class SmackableGetHit : MonoBehaviour
             // try get component on PlayerAttack or EnemyAttack, get the appropriate damage and knock nums from those
             if (collision.gameObject.GetComponentInParent<PlayerAttack>() != null)
             {
-                enemyHealth.TakeDamage(1);//collision.gameObject.GetComponentInParent<PlayerAttack>().DMG);
+                smackableHealth.TakeDamage(1);//collision.gameObject.GetComponentInParent<PlayerAttack>().DMG);
                 TakeKnockback(collision.gameObject.GetComponentInParent<PlayerAttack>().Knockback);
             }
         }
@@ -81,7 +82,7 @@ public class SmackableGetHit : MonoBehaviour
         {
             if (collision.gameObject.CompareTag("Terrain"))
             {
-                enemyHealth.TakeDamage(1); // Whenever we hit terrain, take a point of damage
+                smackableHealth.TakeDamage(1); // Whenever we hit terrain, take a point of damage
                 if(((left) || (right)) && !bottom)
                 {
                     smackableAnim.swapRotationDirection();
@@ -94,7 +95,7 @@ public class SmackableGetHit : MonoBehaviour
             }
             else if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("Breakable"))
             {
-                enemyHealth.TakeDamage(99); // If we hit an enemy or breakable rn, auto-break
+                smackableHealth.TakeDamage(99); // If we hit an enemy or breakable rn, auto-break
             }
         }
     }
@@ -105,22 +106,6 @@ public class SmackableGetHit : MonoBehaviour
         rb.AddForce(knockback * 4f, ForceMode2D.Impulse);
     }
 
-    public void Bounce(bool vertical)
-    {
-       /* if (vertical)   // If we bounced against a vertical wall, we want our vertical velocity to remain constant
-        {
-            Debug.Log("Bounce off a wall");
-            rb.velocity = new Vector2(-rb.velocity.x, rb.velocity.y);
-        }
-        else    // If it was a floor or ceiling, we want our horizontal velocity to remain constant
-        {
-            Debug.Log("Bounce off a floor or ceiling");
-            rb.velocity = new Vector2(rb.velocity.x, -rb.velocity.y * 2);
-        }*/
-        
-        //rb.AddForce(knockback, ForceMode2D.Impulse);
-    }
-
     private bool GetHitDirection(Collider2D collision)
     {
         bool right = false;
@@ -129,5 +114,6 @@ public class SmackableGetHit : MonoBehaviour
             right = true;
         }
         return right;
+
     }
 }

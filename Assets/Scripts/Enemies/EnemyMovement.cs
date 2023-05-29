@@ -4,16 +4,18 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-    enum EnemyType { Sasha, Melee, Laser, Rocket};    // Determines movement behavior
+    public enum EnemyType { Sasha, Melee, Laser, Rocket};    // Determines movement behavior
     [Header("Movement Variables")]
     //This is whether or not the enemy is allowed to move
     [SerializeField] private bool disabled = false;
+    public bool Disabled => disabled;
     // The speed at which the enemy moves
     [SerializeField] private float Speed = 2.7f;
     // Acceleration of the enemy. Smaller number = faster
     [SerializeField] private float Acceleration = .05f;
     // This means that you're 1D character is facing left by default (1D means you only face left or right)")]
     [SerializeField] private bool SpriteFacingRight = true;
+    public bool RightFacing => SpriteFacingRight;
 
     [Header("Jump Variables")]
     [SerializeField] private bool isGrounded = false;    // If the player is grounded
@@ -38,18 +40,20 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float ledgeRayLength = 1f;
 
     [Header("Enemy-Specific Variables")]
-    [SerializeField] EnemyType enemyType = EnemyType.Melee;
+    [SerializeField] private EnemyType enemyType = EnemyType.Melee;
+    public EnemyType typeOfEnemy => enemyType;
     [SerializeField] private bool act = false;          // Whether the enemy's AI is enabled
     [SerializeField] private bool attack = false;       // Whether the enemy is attacking or not (determined by proximity to player)
+    public bool isAttack => attack; 
     [SerializeField] private float DistanceToStartActing = 10f; // How close the player should be to trigger the enemy to start doing something
     [SerializeField] private float DistanceToApproachTo = 2f;   // How close the enemy should get to the player before attacking
 
-    [Header("Melee Variables")]
-    [Header("Laser Variables")]
-    [Header("Rocket Variables")]
-
     private float HorizontalMovement;
     private Vector2 lastLookDirection;
+
+    PhysicsMaterial2D pMaterial;
+    [SerializeField] PhysicsMaterial2D pMaterialBouncy;
+
 
     private Vector3 currentVelocity = Vector3.zero;
 
@@ -68,6 +72,7 @@ public class EnemyMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
+        pMaterial = col.sharedMaterial;
 
         rend = enemySprite.GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
         anim = enemySprite.GetComponent<Animator>(); //Get Animator Component
@@ -88,6 +93,7 @@ public class EnemyMovement : MonoBehaviour
             Debug.DrawRay(col.bounds.center, Vector2.left * ledgeRayLength, Color.green); 
             Debug.DrawRay(col.bounds.center, Vector2.right * ledgeRayLength, Color.blue); 
         }
+
            
 
         if (!disabled) //If player movement is NOT disabled
@@ -152,6 +158,7 @@ public class EnemyMovement : MonoBehaviour
                 else
                 {
                     HorizontalMovement = 0;
+                    attack = true;
                 }
 
                 
@@ -173,7 +180,7 @@ public class EnemyMovement : MonoBehaviour
     }
 
     // Public methods ----------------------------------------
-    public void DisablePlayer(bool isDisabled)  // Disables the enemy movement (may prove useful for applying hitstun)
+    public void DisableEnemy(bool isDisabled)  // Disables the enemy movement (may prove useful for applying hitstun)
     {
         disabled = isDisabled;
         if (disabled)
@@ -185,8 +192,11 @@ public class EnemyMovement : MonoBehaviour
     }
     public void TakeKnockback(Vector3 knockback)
     {
-        rb.velocity = new Vector2(0, 0);
+        
+        DisableEnemy(true);
         rb.AddForce(knockback, ForceMode2D.Impulse);
+        StartCoroutine(DoHitstun(.5f));
+
     }
 
     // Private methods ----------------------------------------
@@ -198,11 +208,12 @@ public class EnemyMovement : MonoBehaviour
             lastLookDirection = new Vector2(move, 0);
         }
 
-        // This will need a conditional for hitstun, but for rn, we are ok
-        Vector3 targetVelocity = new Vector3(move * Speed, rb.velocity.y); //Make target velocity how we want to move.
-        rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref currentVelocity, Acceleration); //Use smooth damp to simulate acceleration.
-
-
+        if (!disabled)
+        {
+            Vector3 targetVelocity = new Vector3(move * Speed, rb.velocity.y); //Make target velocity how we want to move.
+            rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref currentVelocity, Acceleration); //Use smooth damp to simulate acceleration.
+        }
+        
         FlipCheck(move);
 
         if (!isGrounded) //if the player is in the air
@@ -212,28 +223,12 @@ public class EnemyMovement : MonoBehaviour
             {
                 //Make gravity harsher so they fall faster.
                 rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1) * Time.deltaTime;
-                /*if (SpriteFacingRight)
-                {
-                    if (playerSprite.transform.rotation.eulerAngles.z > -20)
-                        playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
-                }
-                else
-                {
-                    if ((playerSprite.transform.rotation.eulerAngles.z > 340) || (playerSprite.transform.rotation.eulerAngles.z < 20))
-                        playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
-                }*/
+
             }
             else if (rb.velocity.y > 0)//  && !Input.GetButton("Jump")) //if player is jumping and holding jump button
             {
-                /*if (playerSprite.transform.rotation.eulerAngles.z > 0)
-                    playerSprite.transform.Rotate(Vector3.forward * (-rb.velocity.y) / 4);*/
-
-                /*if (!Input.GetButton("Jump"))
-                {
-                    //Make gravity less so they jump higher. Creates variable jump heights.
-                    rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
-                }*/
             }
+
         }
 
     }
@@ -241,6 +236,7 @@ public class EnemyMovement : MonoBehaviour
 
     private void Jump()
     {
+        Debug.Log("Jump");
         rb.velocity = new Vector2(rb.velocity.x, 0); //Stop any previous vertical movement
         rb.AddForce(Vector2.up * JumpForce, ForceMode2D.Impulse); //Add force upwards as an impulse.
         //if (playerAudio && playerAudio != null)
@@ -280,7 +276,18 @@ public class EnemyMovement : MonoBehaviour
 
     // Coroutines ----------------------------------------
 
-    // Ok, jumping over 1 block tile time
-    // ...I mean, just a raycast facing front is probs the best way
-    // If the raycast gets pinged on terrain, jump
+    IEnumerator DoHitstun(float stunVal)    // Hitstun lasts for a certain amt of time, but is only broken once the enemy is grounded again
+    {
+        col.sharedMaterial = pMaterialBouncy;
+        yield return new WaitForSeconds(stunVal);
+        yield return new WaitUntil(() => isGrounded);
+        col.sharedMaterial = pMaterial;
+        DisableEnemy(false);
+    }
+
+    //TODO
+    //...actually, freezing the enemy until the combo is done wouldn't be fun at all. nevermind.
+    // The enemies shouldn't be moving the beach ball about
+
+
 }

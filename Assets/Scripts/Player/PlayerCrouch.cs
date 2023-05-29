@@ -28,7 +28,7 @@ public class PlayerCrouch : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetButton("Crouch") && GetComponent<PlayerMovement>().IsGrounded) // If we are crouching and grounded
+        if (Input.GetButton("Crouch") && GetComponent<PlayerMovement>().IsGrounded && !GetComponent<PlayerMovement>().Disabled) // If we are crouching and grounded
         {
             isCrouching = true;
             if (!GetComponent<PlayerMovement>().RightFacing)

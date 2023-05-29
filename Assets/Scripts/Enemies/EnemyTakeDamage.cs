@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class EnemyTakeDamage : MonoBehaviour
 {
-    EnemyHealth enemyHealth;
+    Health enemyHealth;
     EnemyMovement enemyMovement;
     DamageFlash damageFlash;
     // Start is called before the first frame update
     void Start()
     {
-        enemyHealth = GetComponent<EnemyHealth>();  
+        enemyHealth = GetComponent<Health>();  
         enemyMovement = GetComponent<EnemyMovement>();
         damageFlash = GetComponentInChildren<DamageFlash>();
     }
