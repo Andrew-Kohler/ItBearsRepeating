@@ -6,6 +6,8 @@ public class PlayerAirBounce : MonoBehaviour
 {
     private PlayerMovement move;
     private Rigidbody2D rb;
+
+    [SerializeField] private float airBounceForce = 5f;
     private void Start()
     {
         move = GetComponentInParent<PlayerMovement>();      // Get Movement component
@@ -30,11 +32,11 @@ public class PlayerAirBounce : MonoBehaviour
             {
                 if (rb.velocity.y > 0) // If we're moving up, no need to negate downward v, just give a little push
                 {
-                    rb.AddForce(new Vector2(0, 5f), ForceMode2D.Impulse);
+                    rb.AddForce(new Vector2(0, airBounceForce), ForceMode2D.Impulse);
                 }
                 else // If we're falling, we do need to negate downward v in addition to getting a little push
                 {
-                    rb.AddForce(new Vector2(0, Mathf.Abs(rb.velocity.y) + 5f), ForceMode2D.Impulse);
+                    rb.AddForce(new Vector2(0, Mathf.Abs(rb.velocity.y) + airBounceForce), ForceMode2D.Impulse);
                 }
 
 

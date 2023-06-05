@@ -7,6 +7,7 @@ public class PlayerTakeDamage : MonoBehaviour
     Health playerHealth;
     PlayerMovement playerMovement;
     DamageFlash damageFlash;
+
     void Start()
     {
         playerHealth = GetComponent<Health>();

@@ -124,6 +124,15 @@ public class PlayerAttack : MonoBehaviour
                 playerSprite.transform.rotation = Quaternion.Euler(0, 0, 0);
             }
         }
+        else if(GetComponent<PlayerCrouch>().IsCrouching)
+        {
+            slash1Done = false;
+            slash2Done = false;
+            slash3Done = false;
+            slashCol.enabled = false;
+            slashRend.color = Color.clear;
+            onCooldown = false;
+        }
     }
 
     // Coroutines ---------------------------------------
@@ -214,6 +223,7 @@ public class PlayerAttack : MonoBehaviour
         }
         else
         {
+            anim.Play("Slash2Air", 0, 0);
             playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
         }
         yield return new WaitForSeconds(.2f);
@@ -263,6 +273,12 @@ public class PlayerAttack : MonoBehaviour
             anim.Play("Slash3Ground", 0, 0);
             yield return new WaitForSeconds(.5f);
         }
+        else
+        {
+            anim.Play("Slash3Air", 0, 0);
+            playerSprite.transform.rotation = Quaternion.Euler(0, 0, 1);
+            yield return new WaitForSeconds(.1f);
+        }
         
 
         //Debug.Log("Slash 3");
@@ -282,15 +298,22 @@ public class PlayerAttack : MonoBehaviour
         if (move.IsGrounded)
         {
             anim.Play("Idle");
+            activeCoroutine = false;
+            slash3Active = false;
+            slash3Done = true;
         }
         else
         {
+            slashCol.enabled = false;
+            slashRend.color = Color.clear;
+            yield return new WaitForSeconds(.1f);
+            activeCoroutine = false;
+            slash3Active = false;
+            slash3Done = true;
             anim.Play("Jump");
         }
 
-        activeCoroutine = false;
-        slash3Active = false;
-        slash3Done = true;
+        
         // Once this is done, reset all the bools and put a cooldown timer on
         StartCoroutine(DoPostComboDelay());
     }

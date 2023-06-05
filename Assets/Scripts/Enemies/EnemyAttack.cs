@@ -43,11 +43,11 @@ public class EnemyAttack : MonoBehaviour
         anim = enemySprite.GetComponent<Animator>();            //Get Animator component
         move = GetComponent<EnemyMovement>();                   // Get Movement component
 
-        if(move.typeOfEnemy == EnemyMovement.EnemyType.Melee)
-        {
+        //if(move.typeOfEnemy == EnemyMovement.EnemyType.Melee)
+        //{
             meleeCol = meleeHitbox.GetComponent<Collider2D>();
             meleeCol.enabled = false;
-        }       
+        //}       
 
     }
 
@@ -134,7 +134,12 @@ public class EnemyAttack : MonoBehaviour
 
         // This, though...oof. Finally, I'll have to figure out how to calculate a launch arc between two points
         GameObject rocket = Instantiate(rocketPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, 45)));
-        rocket.GetComponent<Projectile>().SetValues(rocketDuration, rocketDMG, rocketKnockback);
+        Vector3 tempRocketKnockback = rocketKnockback;
+        if (!move.RightFacing)  // Account for direction
+        {
+            tempRocketKnockback.x = tempRocketKnockback.x * -1;
+        }
+        rocket.GetComponent<Projectile>().SetValues(rocketDuration, rocketDMG, tempRocketKnockback);
         Rigidbody2D rb = rocket.GetComponent<Rigidbody2D>();
 
         Vector2 direction = new Vector2(1, 1);

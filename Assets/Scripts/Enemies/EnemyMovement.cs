@@ -130,6 +130,7 @@ public class EnemyMovement : MonoBehaviour
                 if (Vector2.Distance(transform.position, bear.transform.position) > DistanceToApproachTo) // If move we still must
                 {
                     jumpCooldown -= Time.deltaTime;
+                    attack = false;
                     if (transform.position.x > bear.transform.position.x)    // Finding which direction to move
                     {
                         HorizontalMovement = -1;    // If we're right of the player
@@ -157,6 +158,10 @@ public class EnemyMovement : MonoBehaviour
                 }
                 else
                 {
+                    if ((transform.position.x > bear.transform.position.x && SpriteFacingRight) || (transform.position.x < bear.transform.position.x && !SpriteFacingRight)) // Check to make sure we're actually facing the player
+                    {
+                        Flip();
+                    } 
                     HorizontalMovement = 0;
                     attack = true;
                 }

@@ -74,6 +74,7 @@ public class PlayerMovement : MonoBehaviour
     private int jumpsLeft; // How many jumps until the player can't jump anymore? reset when grounded.
 
     PhysicsMaterial2D pMaterial;
+    [SerializeField] PhysicsMaterial2D pMaterialSlip;
     [SerializeField] PhysicsMaterial2D pMaterialBouncy;
 
     // Start is called before the first frame update
@@ -227,6 +228,7 @@ public class PlayerMovement : MonoBehaviour
         hitstun = true;
         DisablePlayer(true);
         rb.AddForce(knockback, ForceMode2D.Impulse);
+        anim.SetBool("isHurt", true);
         StartCoroutine(DoHitstun(2f));
 
     }
@@ -395,9 +397,10 @@ public class PlayerMovement : MonoBehaviour
         yield return new WaitForSeconds(stunVal);
         yield return new WaitUntil(() => isGrounded);
 
-        col.sharedMaterial = pMaterial;
+        col.sharedMaterial = pMaterialSlip;
         hitstun = false;
         DisablePlayer(false);
+        anim.SetBool("isHurt", false);
     }
 
 }
