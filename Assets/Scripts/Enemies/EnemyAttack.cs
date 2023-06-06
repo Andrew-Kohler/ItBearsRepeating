@@ -10,6 +10,7 @@ public class EnemyAttack : MonoBehaviour
     [SerializeField] GameObject laserPrefab;    // If a laser enemy, we need the laser prefab
     [SerializeField] GameObject rocketPrefab;    // If a rocket enemy, we need the laser prefab
     [SerializeField] GameObject enemySprite;    // Actual enemy sprite for anims
+    [SerializeField] GameObject bear;           // For distance calc on the rocket
 
     private Collider2D meleeCol;    // If we're melee, we need the collider on the hitbox
     private Animator anim;          // Enemy anim
@@ -30,6 +31,7 @@ public class EnemyAttack : MonoBehaviour
     [SerializeField] private float rocketSPD = .5f;
     [SerializeField] private float rocketDuration = 7f;
     [SerializeField] private Vector3 rocketKnockback = new Vector3(5f, 5f, 0f);
+    private float rocketXRef = 21f; // The value that approximates the maximum x range of the rocket
 
     private float currentDMG;           // These are the values that we can change internally in this class and then pass along to other classes that need them
     private Vector3 currentKnockback;
@@ -112,7 +114,7 @@ public class EnemyAttack : MonoBehaviour
 
         // This will be a little different, we'll be spawning the projectile and letting it fly, but I think I get it
         GameObject laser  = Instantiate(laserPrefab, this.transform.position, Quaternion.identity);
-        laser.GetComponent<Projectile>().SetValues(laserDuration, laserDMG, laserKnockback);
+        laser.GetComponent<Projectile>().SetValues(laserDuration, laserDMG, laserKnockback, true);
         Rigidbody2D rb = laser.GetComponent<Rigidbody2D>();
 
         Vector2 direction = Vector2.right;
@@ -131,21 +133,39 @@ public class EnemyAttack : MonoBehaviour
     IEnumerator DoRocketAttack()
     {
         activeCoroutine = true;
+        Vector2 direction = new Vector2(1, 1);
+        Vector3 tempRocketKnockback = rocketKnockback;
+        float angle = 45f;
+        float tempRocketSpeed = rocketSPD;
+        bool right = true;
+        if (Mathf.Abs(transform.position.x - bear.transform.position.x) < rocketXRef)
+        {
+            
+            direction = new Vector2((rocketXRef - (rocketXRef - Mathf.Abs(transform.position.x - bear.transform.position.x))) / rocketXRef, (rocketXRef + (rocketXRef - Mathf.Abs(transform.position.x - bear.transform.position.x))) / rocketXRef);
+            tempRocketSpeed = rocketSPD - ((rocketSPD - ((Mathf.Abs(transform.position.x - bear.transform.position.x) / rocketXRef) * (rocketSPD))) / 2);
+            angle = Mathf.Rad2Deg * Mathf.Atan2(direction.y, direction.x);
+            Debug.Log(angle);
+            //Debug.Log((Mathf.Abs(transform.position.x - bear.transform.position.x)) / rocketXRef);
+        }
+
+        if (!move.RightFacing)
+        {
+            angle = Mathf.Rad2Deg * Mathf.Atan2(direction.x, direction.y);
+            direction.x *= -1;
+            angle += 90;
+            tempRocketKnockback.x = tempRocketKnockback.x * -1;
+            right = false;
+        }
 
         // This, though...oof. Finally, I'll have to figure out how to calculate a launch arc between two points
-        GameObject rocket = Instantiate(rocketPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, 45)));
-        Vector3 tempRocketKnockback = rocketKnockback;
-        if (!move.RightFacing)  // Account for direction
-        {
-            tempRocketKnockback.x = tempRocketKnockback.x * -1;
-        }
-        rocket.GetComponent<Projectile>().SetValues(rocketDuration, rocketDMG, tempRocketKnockback);
+        Debug.Log(angle);
+        GameObject rocket = Instantiate(rocketPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, angle)));
+        rocket.GetComponent<Projectile>().SetValues(rocketDuration, rocketDMG, tempRocketKnockback, right);
         Rigidbody2D rb = rocket.GetComponent<Rigidbody2D>();
 
-        Vector2 direction = new Vector2(1, 1);
-        if (!move.RightFacing)
-            direction.x *= -1;
-        rb.AddForce(direction * rocketSPD, ForceMode2D.Impulse);
+       
+            
+        rb.AddForce(direction * tempRocketSpeed, ForceMode2D.Impulse);
 
         yield return new WaitForSeconds(3f);
 

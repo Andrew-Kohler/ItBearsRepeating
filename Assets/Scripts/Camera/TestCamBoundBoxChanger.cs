@@ -21,7 +21,6 @@ public class TestCamBoundBoxChanger : MonoBehaviour
     {
         if (Vector2.Distance(player.transform.position, collider2ActivePoint.transform.position) < 5f)
         {
-            Debug.Log("Ah");
             confiner.m_BoundingShape2D = collider2;
 
         }
