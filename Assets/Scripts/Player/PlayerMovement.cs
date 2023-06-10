@@ -59,6 +59,7 @@ public class PlayerMovement : MonoBehaviour
     private Animator anim;
     private PlayerCrouch crouch;
     private PlayerAttack attack;
+    private PlayerSprint pSprint;
 
     private float HorizontalMovement;
     private float VerticalMovement;
@@ -90,6 +91,7 @@ public class PlayerMovement : MonoBehaviour
         
         crouch = GetComponent<PlayerCrouch>();
         attack = GetComponent<PlayerAttack>();
+        pSprint = GetComponent<PlayerSprint>();
         //playerAudio = GetComponent<PlayerAudio>();
 
         idleCountdown = timeBetweenIdles;
@@ -154,10 +156,15 @@ public class PlayerMovement : MonoBehaviour
                     jumpsLeft--;
                 }
 
-                if (canAirDash && Input.GetButtonDown("Slash") && !isGrounded && sprint && HorizontalMovement != 0) // If the player does the air dash
+                if (Input.GetButtonDown("Slash"))
                 {
-                    StartCoroutine(DoAirDash());
+                    Debug.Log("Ah");
                 }
+                /*if (canAirDash && Input.GetButtonDown("Slash") && !isGrounded && sprint && HorizontalMovement != 0) // If the player does the air dash
+                {
+                    
+                    StartCoroutine(DoAirDash());
+                }*/
 
                 // If they are grounded, reset their jumps and air dash
                 if (isGrounded)
@@ -166,7 +173,7 @@ public class PlayerMovement : MonoBehaviour
                 }
 
                 // Check if the player is sprinting
-                if (Input.GetButton("Sprint"))
+                if (Input.GetButton("Sprint") && pSprint.canSprint)
                 {
                     idleCountdown = timeBetweenIdles;
                     sprint = true;
@@ -188,13 +195,18 @@ public class PlayerMovement : MonoBehaviour
                 }
                 else if (attack.IsSlashing)
                 {
-                    idleCountdown = timeBetweenIdles;
-                    if (isGrounded)
+                    if (canAirDash && !isGrounded && sprint && HorizontalMovement != 0) // If the player does the air dash
+                    {
+                        StartCoroutine(DoAirDash());
+                    }
+
+                    else if (isGrounded)
                     {
                         HorizontalMovement = 0;
                         rb.velocity = Vector2.zero;
                     }
-                    
+                    idleCountdown = timeBetweenIdles;
+
                 }               
             }
      
@@ -266,8 +278,11 @@ public class PlayerMovement : MonoBehaviour
                 rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1) * Time.deltaTime;
                 if (SpriteFacingRight)
                 {
-                    if (playerSprite.transform.rotation.eulerAngles.z > -20)
-                         playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
+                    if ((playerSprite.transform.eulerAngles.z > 340) || (playerSprite.transform.rotation.eulerAngles.z < 20))
+                    {
+                        playerSprite.transform.Rotate(Vector3.forward * rb.velocity.y / 2);
+                    }
+                         
                 }
                 else
                 {
@@ -283,7 +298,19 @@ public class PlayerMovement : MonoBehaviour
                 if (!Input.GetButton("Jump"))
                 {
                     //Make gravity less so they jump higher. Creates variable jump heights.
-                    rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
+                    if (attack.IsSlashing)
+                    {
+                        if (!attack.IsSlash3Active)
+                        {
+                            rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
+                            
+                        }
+                    }
+                    else
+                    {
+                        rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1.5f) * Time.deltaTime;
+                    }
+                    
                 }
             }
 
@@ -293,21 +320,7 @@ public class PlayerMovement : MonoBehaviour
                 {
                     rb.AddForce(new Vector2(0, Mathf.Abs(rb.velocity.y)), ForceMode2D.Impulse); // Negate the fall
                 }
-                // Yeah, it's not a good idea to give the player any way of perma-boosting their height, and of the two options:
-                // 1. Allow infinite air slashes without height gain
-                // 2. Allow finite air slashes with height gain
-                // I prefer 1.
 
-                // Waitwaitwaitwait. What if I make it so that you CAN gain height off of slashes, but only when juggling a bad guy?
-                // OPTION 3, THAT SOUNDS RAD AS HECK, AND WILL CREATE COOL PLATFORMING CHALLENGES
-                /*else    // If the player is rising
-                {
-                    rb.AddForce(new Vector2(0, .5f), ForceMode2D.Impulse); // No need to cancel falling velocity, just give a little boost
-                }*/
-
-                // Ok, we're back:
-                // How do I confirm that I got a hit?
-                // I could put a script on the player hitbox, that sounds easiest
             }
 
         }
@@ -369,6 +382,8 @@ public class PlayerMovement : MonoBehaviour
         disabled = true; // A CONTRADICTION IN TERMS, BY MY HAT AND SCARF
         canAirDash = false;
         isDashing = true;
+        attack.ActivateAirDash();
+        //Debug.Log(isDashing);
         
         float originalGravity = rb.gravityScale;
 
@@ -381,6 +396,7 @@ public class PlayerMovement : MonoBehaviour
         disabled = false;
         canAirDash = true;  // Reset air dash
         isDashing = false;
+        //Debug.Log(isDashing);
         yield return null;
     }
 

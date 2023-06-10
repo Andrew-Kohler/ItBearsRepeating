@@ -45,6 +45,7 @@ public class PlayerAttack : MonoBehaviour
     private bool slash1Active;  // Booleans that let us know which slash is active
     private bool slash2Active;
     private bool slash3Active;
+    public bool IsSlash3Active => slash3Active;
     private bool airDashActive; 
     public bool IsAirDashActive => airDashActive;
 
@@ -93,11 +94,14 @@ public class PlayerAttack : MonoBehaviour
         {
             if (Input.GetButtonDown("Slash") && !onCooldown && !airDashActive)    // If we try to slash and aren't on cooldown
             {
+                /*Debug.Log("Well, we're attacking SOMEHOW");
+                Debug.Log(move.IsAirDashing);
                 if (move.IsAirDashing) // If the player does the air dash
                 {
+                    Debug.Log("Come on! Show me ya moves!");
                     StartCoroutine(DoAirDashAttack());
-                }
-                else
+                }*/
+                if (!move.IsAirDashing)
                 {
                     if (!slash1Active && !slash1Done)                  // If slash 1 isn't active
                     {
@@ -114,7 +118,7 @@ public class PlayerAttack : MonoBehaviour
                 }         
 
             }
-            else if (!activeCoroutine)  // If we aren't slashing
+            else if (!activeCoroutine)  // If we aren't slashing, or if we are hurted
             {
                 slashCol.enabled = false;
                 slashRend.color = Color.clear;
@@ -124,7 +128,7 @@ public class PlayerAttack : MonoBehaviour
                 playerSprite.transform.rotation = Quaternion.Euler(0, 0, 0);
             }
         }
-        else if(GetComponent<PlayerCrouch>().IsCrouching)
+        else if(GetComponent<PlayerCrouch>().IsCrouching || move.Hitstun)
         {
             slash1Done = false;
             slash2Done = false;
@@ -133,6 +137,12 @@ public class PlayerAttack : MonoBehaviour
             slashRend.color = Color.clear;
             onCooldown = false;
         }
+    }
+
+    // Public methods ----------------------------------
+    public void ActivateAirDash()   // In lieu of trusting the update method to work, because when has it ever, we're just methoding this
+    {
+        StartCoroutine(DoAirDashAttack());
     }
 
     // Coroutines ---------------------------------------
@@ -352,7 +362,6 @@ public class PlayerAttack : MonoBehaviour
         slashRend.color = Color.white;
         slashAnim.Play("AirDash", 0, 0);
         anim.Play("SlashAirDash", 0, 0);
-        //yield return new WaitForSeconds(1f);
         yield return new WaitUntil(() => !move.IsAirDashing);  // We keep going until we hit the dirt
 
         anim.Play("Idle", 0, 0);

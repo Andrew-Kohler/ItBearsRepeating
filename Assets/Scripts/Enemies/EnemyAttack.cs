@@ -88,6 +88,11 @@ public class EnemyAttack : MonoBehaviour
 
     // Public methods ---------------------------------------------------------
 
+    public void DamagePlayerMelee(Collider2D collision)
+    {
+        collision.gameObject.GetComponent<PlayerTakeDamage>().TakeDamage(this.gameObject);
+    }
+
     // Private methods ---------------------------------------------------------
 
     // Coroutines ---------------------------------------------------------
@@ -144,7 +149,7 @@ public class EnemyAttack : MonoBehaviour
             direction = new Vector2((rocketXRef - (rocketXRef - Mathf.Abs(transform.position.x - bear.transform.position.x))) / rocketXRef, (rocketXRef + (rocketXRef - Mathf.Abs(transform.position.x - bear.transform.position.x))) / rocketXRef);
             tempRocketSpeed = rocketSPD - ((rocketSPD - ((Mathf.Abs(transform.position.x - bear.transform.position.x) / rocketXRef) * (rocketSPD))) / 2);
             angle = Mathf.Rad2Deg * Mathf.Atan2(direction.y, direction.x);
-            Debug.Log(angle);
+            //Debug.Log(angle);
             //Debug.Log((Mathf.Abs(transform.position.x - bear.transform.position.x)) / rocketXRef);
         }
 
@@ -157,8 +162,7 @@ public class EnemyAttack : MonoBehaviour
             right = false;
         }
 
-        // This, though...oof. Finally, I'll have to figure out how to calculate a launch arc between two points
-        Debug.Log(angle);
+        //Debug.Log(angle);
         GameObject rocket = Instantiate(rocketPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, angle)));
         rocket.GetComponent<Projectile>().SetValues(rocketDuration, rocketDMG, tempRocketKnockback, right);
         Rigidbody2D rb = rocket.GetComponent<Rigidbody2D>();

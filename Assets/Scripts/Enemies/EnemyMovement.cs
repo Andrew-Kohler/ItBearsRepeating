@@ -19,6 +19,7 @@ public class EnemyMovement : MonoBehaviour
 
     [Header("Jump Variables")]
     [SerializeField] private bool isGrounded = false;    // If the player is grounded
+    public bool IsGrounded => isGrounded;
     [SerializeField] private bool nearLedge = false;    // If the player is close enough to a ledge that jumping is warranted
     //Controls whether your player can jump or not
     [SerializeField] private bool canJump = true;

@@ -15,7 +15,6 @@ public class Projectile : MonoBehaviour
 	private void Start()
 	{
 		rb = GetComponent<Rigidbody2D>();
-		Debug.Log(transform.rotation.eulerAngles);
 		StartCoroutine(Duration());
 	}
 
@@ -56,6 +55,16 @@ public class Projectile : MonoBehaviour
 		}
 	}
 
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+			collision.gameObject.GetComponent<PlayerTakeDamage>().TakeDamage(this.gameObject);
+			StartCoroutine(DoWaitForShake());
+		}
+		
+	}
+
     public Projectile(float duration, float damageValue, Vector3 knockback)
 	{
 		this.duration = duration;
@@ -74,6 +83,12 @@ public class Projectile : MonoBehaviour
 	IEnumerator Duration()
 	{
 		yield return new WaitForSeconds(duration);
+		Destroy(gameObject);
+	}
+
+	IEnumerator DoWaitForShake()
+    {
+		yield return new WaitForSeconds(.1f);
 		Destroy(gameObject);
 	}
 
