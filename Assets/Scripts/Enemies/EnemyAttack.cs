@@ -15,22 +15,31 @@ public class EnemyAttack : MonoBehaviour
     private Collider2D meleeCol;    // If we're melee, we need the collider on the hitbox
     private Animator anim;          // Enemy anim
     private EnemyMovement move;     // Enemy movement
+    private AudioSource audioS;
 
     // DMG is the damage it does to the bear, SPD is how fast the attack can be performed
     [Header("Melee Stats")]
     [SerializeField] private float meleeDMG = 1f;
     [SerializeField] private float meleeSPD = 1f;
     [SerializeField] private Vector3 meleeKnockback = new Vector3(0f, 0f, 0f);
+    [SerializeField] private AudioClip meleeSound1;
+    
     [Header("Laser Stats")]
     [SerializeField] private float laserDMG = .3f;
-    [SerializeField] private float laserSPD = .5f;
+    [SerializeField] private float laserProjSPD = 5f;  // How fast the laser travels
+    [SerializeField] private float laserAtkSPD = 2f;   // How frequently the bot fires
     [SerializeField] private float laserDuration = 7f;
     [SerializeField] private Vector3 laserKnockback = new Vector3(0f, 0f, 0f);
+    [SerializeField] private AudioClip laserSound1;
+
     [Header("Rocket Stats")]
     [SerializeField] private float rocketDMG = 10f;
     [SerializeField] private float rocketSPD = .5f;
     [SerializeField] private float rocketDuration = 7f;
     [SerializeField] private Vector3 rocketKnockback = new Vector3(5f, 5f, 0f);
+    [SerializeField] private AudioClip rocketSound1;
+    [SerializeField] private AudioClip rocketSound2;
+    [SerializeField] private AudioClip rocketSound3;
     private float rocketXRef = 21f; // The value that approximates the maximum x range of the rocket
 
     private float currentDMG;           // These are the values that we can change internally in this class and then pass along to other classes that need them
@@ -44,10 +53,11 @@ public class EnemyAttack : MonoBehaviour
     {
         anim = enemySprite.GetComponent<Animator>();            //Get Animator component
         move = GetComponent<EnemyMovement>();                   // Get Movement component
+        audioS = GetComponent<AudioSource>();
 
         //if(move.typeOfEnemy == EnemyMovement.EnemyType.Melee)
         //{
-            meleeCol = meleeHitbox.GetComponent<Collider2D>();
+        meleeCol = meleeHitbox.GetComponent<Collider2D>();
             meleeCol.enabled = false;
         //}       
 
@@ -56,7 +66,7 @@ public class EnemyAttack : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (move.isAttack && !activeCoroutine && !move.Disabled)  // If now is the time to attack and we aren't currently attacking
+        if (move.isAttack && !activeCoroutine && !move.Disabled && !GameManager.Instance.isGameOver())  // If now is the time to attack and we aren't currently attacking
         {
             if(move.typeOfEnemy == EnemyMovement.EnemyType.Melee)
             {
@@ -73,7 +83,7 @@ public class EnemyAttack : MonoBehaviour
         }
         else
         {
-            if (!move.isAttack || move.Disabled)
+            if (!move.isAttack || move.Disabled || GameManager.Instance.isGameOver())
             {
                 StopAllCoroutines();
                 activeCoroutine = false;
@@ -95,6 +105,23 @@ public class EnemyAttack : MonoBehaviour
 
     // Private methods ---------------------------------------------------------
 
+    private void playRocketSound()
+    {
+        int rand = Random.Range(0, 3);
+        if (rand == 0)
+        {
+            audioS.PlayOneShot(rocketSound1, .3f);
+        }
+        else if (rand == 1)
+        {
+            audioS.PlayOneShot(rocketSound2, .3f);
+        }
+        else
+        {
+            audioS.PlayOneShot(rocketSound3, .3f);
+        }
+    }
+
     // Coroutines ---------------------------------------------------------
 
     IEnumerator DoMeleeAttack()
@@ -104,10 +131,13 @@ public class EnemyAttack : MonoBehaviour
         currentDMG = meleeDMG;
         currentKnockback = meleeKnockback;
 
+        anim.Play("Attack", 0, 0);
+        yield return new WaitForSeconds(.332f);
         meleeCol.enabled = true;
-        yield return new WaitForSeconds(.1f);
+        audioS.PlayOneShot(meleeSound1, .4f);
+        yield return new WaitForSeconds(.2f);
         meleeCol.enabled = false;
-        yield return new WaitForSeconds(.8f);
+        yield return new WaitForSeconds(meleeSPD - .332f);
 
         activeCoroutine = false;
         yield return null;
@@ -118,6 +148,8 @@ public class EnemyAttack : MonoBehaviour
         activeCoroutine = true;
 
         // This will be a little different, we'll be spawning the projectile and letting it fly, but I think I get it
+        anim.Play("Attack", 0, 0);
+        audioS.PlayOneShot(laserSound1, .3f);
         GameObject laser  = Instantiate(laserPrefab, this.transform.position, Quaternion.identity);
         laser.GetComponent<Projectile>().SetValues(laserDuration, laserDMG, laserKnockback, true);
         Rigidbody2D rb = laser.GetComponent<Rigidbody2D>();
@@ -125,11 +157,9 @@ public class EnemyAttack : MonoBehaviour
         Vector2 direction = Vector2.right;
         if (!move.RightFacing)
             direction *= -1;
-        rb.AddForce(direction * laserSPD, ForceMode2D.Impulse);
+        rb.AddForce(direction * laserProjSPD, ForceMode2D.Impulse);
 
-        yield return new WaitForSeconds(2f);
-
-
+        yield return new WaitForSeconds(laserAtkSPD);
 
         activeCoroutine = false;
         yield return null;
@@ -163,6 +193,8 @@ public class EnemyAttack : MonoBehaviour
         }
 
         //Debug.Log(angle);
+        anim.Play("Attack", 0, 0);
+        playRocketSound();
         GameObject rocket = Instantiate(rocketPrefab, this.transform.position, Quaternion.Euler(new Vector3(0, 0, angle)));
         rocket.GetComponent<Projectile>().SetValues(rocketDuration, rocketDMG, tempRocketKnockback, right);
         Rigidbody2D rb = rocket.GetComponent<Rigidbody2D>();

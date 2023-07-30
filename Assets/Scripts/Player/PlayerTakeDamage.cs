@@ -27,37 +27,19 @@ public class PlayerTakeDamage : MonoBehaviour
         damageFlash = GetComponentInChildren<DamageFlash>();
     }
 
-    /*private void OnTriggerEnter2D(Collider2D collision)
+    private void Update()
     {
-        if (collision.CompareTag("Enemy Hitbox"))   // If we touch an enemy-controlled hitbox
+        if(playerHealth.currentHealth <= 0)
         {
-            damageFlash.CallDamageFlash();
-            // Accounting for melee and ranged sources of damage
-            if (collision.gameObject.GetComponentInParent<EnemyAttack>() != null)
-            {
-                playerHealth.TakeDamage(collision.gameObject.GetComponentInParent<EnemyAttack>().DMG);
-                if(collision.gameObject.GetComponentInParent<EnemyAttack>().DMG >= 10)
-                {
-                    playerMovement.TakeKnockback(collision.gameObject.GetComponentInParent<EnemyAttack>().Knockback);
-                }
-            }
-            else if(collision.gameObject.GetComponent<Projectile>() != null)
-            {
-                playerHealth.TakeDamage(collision.gameObject.GetComponent<Projectile>().damageValue);
-                if (collision.gameObject.GetComponent<Projectile>().damageValue >= 10)
-                {
-                    playerMovement.TakeKnockback(collision.gameObject.GetComponent<Projectile>().knockback);
-                }
-                Destroy(collision.gameObject);
-            }
-
+            Debug.Log("Take damage is down");
+            enabled = false;
         }
-    }*/
+    }
 
     public void TakeDamage(GameObject dmgSource)
     {
         damageFlash.CallDamageFlash();
-        // Accounting for melee and ranged sources of damage
+        // Accounting for melee, ranged, and explosive sources of damage
         if (dmgSource.GetComponentInParent<EnemyAttack>() != null)
         {
             if (crouch.IsCrouching)
@@ -66,10 +48,15 @@ public class PlayerTakeDamage : MonoBehaviour
             }
             else
             {
-                playerHealth.TakeDamage(dmgSource.GetComponentInParent<EnemyAttack>().DMG);
-                if (dmgSource.GetComponentInParent<EnemyAttack>().DMG >= 10)
+                
+                if (dmgSource.GetComponentInParent<EnemyAttack>().DMG >= 10 && GameManager.Instance.isGameOver() == false)
                 {
+                    playerHealth.TakeDamageNoKillCheck(dmgSource.GetComponentInParent<EnemyAttack>().DMG);
                     playerMovement.TakeKnockback(dmgSource.GetComponentInParent<EnemyAttack>().Knockback);
+                }
+                else
+                {
+                    playerHealth.TakeDamage(dmgSource.GetComponentInParent<EnemyAttack>().DMG);
                 }
             }
             
@@ -81,15 +68,39 @@ public class PlayerTakeDamage : MonoBehaviour
                 playerHealth.TakeDamage(dmgSource.GetComponent<Projectile>().damageValue / 2);
             }
             else
-            {
-                playerHealth.TakeDamage(dmgSource.GetComponent<Projectile>().damageValue);
-                if (dmgSource.GetComponent<Projectile>().damageValue >= 10)
+            {             
+                if (dmgSource.GetComponent<Projectile>().damageValue >= 10 && GameManager.Instance.isGameOver() == false)
                 {
+                    playerHealth.TakeDamageNoKillCheck(dmgSource.GetComponent<Projectile>().damageValue);
                     playerMovement.TakeKnockback(dmgSource.GetComponent<Projectile>().knockback);
+                }
+                else
+                {
+                    playerHealth.TakeDamage(dmgSource.GetComponent<Projectile>().damageValue);
                 }
             }
             
             //Destroy(dmgSource);
+        }
+        else if(dmgSource.GetComponent<Explosion>() != null)
+        {
+            if (crouch.IsCrouching)
+            {
+                playerHealth.TakeDamage(dmgSource.GetComponent<Explosion>().explosionDMG / 2);
+            }
+            else
+            {
+                
+                if (dmgSource.GetComponent<Explosion>().explosionDMG >= 10 && GameManager.Instance.isGameOver() == false)
+                {
+                    playerHealth.TakeDamageNoKillCheck(dmgSource.GetComponent<Explosion>().explosionDMG);
+                    playerMovement.TakeKnockback(dmgSource.GetComponent<Explosion>().explosionKnockback);
+                }
+                else
+                {
+                    playerHealth.TakeDamage(dmgSource.GetComponent<Explosion>().explosionDMG);
+                }
+            }
         }
     }
 }

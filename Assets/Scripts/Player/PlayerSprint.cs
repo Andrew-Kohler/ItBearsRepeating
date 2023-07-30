@@ -6,7 +6,7 @@ public class PlayerSprint : MonoBehaviour
 {
     public bool canSprint;          // Whether we can sprint according to the meter
     public float stamina;
-    [SerializeField] private float maxStamina;
+    [SerializeField] public float maxStamina;
     [SerializeField] private float lossRate;    // How fast we lose and gain stamina
     [SerializeField] private float gainRate;
     private PlayerMovement move;    // Movement, so we can tell it if we can sprint/air dash
@@ -28,7 +28,7 @@ public class PlayerSprint : MonoBehaviour
             if (canSprint)  // If we are CAPABLE of sprinting
             {
                 // If we are sprinting
-                if (move.IsSprinting)
+                if (move.IsSprinting && move.HMovement != 0)
                 {
                     stamina -= (lossRate * Time.deltaTime);
                     if (move.IsAirDashing)
@@ -37,7 +37,7 @@ public class PlayerSprint : MonoBehaviour
                     }
                 }
                 // Else if we are not sprinting
-                else if (!move.IsSprinting && stamina < maxStamina)
+                else if ((!move.IsSprinting && stamina < maxStamina) || (move.HMovement == 0 && stamina < maxStamina))
                 {
                     stamina += (gainRate * Time.deltaTime);
                 }
@@ -51,11 +51,20 @@ public class PlayerSprint : MonoBehaviour
         }
     } // End of update
 
+    public void RestoreStamina(float stamina)
+    {
+        this.stamina += stamina;
+        if(this.stamina > maxStamina)
+        {
+            this.stamina = maxStamina;
+        }
+    }
+
     // Coroutines -------------------------------------------
     IEnumerator DoAirDash()
     {
         activeCoroutine = true;
-        stamina -= (.5f * maxStamina);
+        stamina -= (.25f * maxStamina);
         if(stamina < 0)
         {
             stamina = 0;

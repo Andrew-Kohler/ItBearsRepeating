@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -8,7 +9,7 @@ public class PlayerMovement : MonoBehaviour
     //This is whether or not the player can actually move
     [SerializeField] private bool disabled = false;
     public bool Disabled => disabled;
-    [SerializeField] private bool hitstun = false;
+    [SerializeField] public bool hitstun = false;
     public bool Hitstun => hitstun;
     // The speed at which the player moves
     [SerializeField] private float Speed = 2.7f;
@@ -62,6 +63,7 @@ public class PlayerMovement : MonoBehaviour
     private PlayerSprint pSprint;
 
     private float HorizontalMovement;
+    public float HMovement => HorizontalMovement;
     private float VerticalMovement;
     private Vector2 lastLookDirection;
 
@@ -95,6 +97,10 @@ public class PlayerMovement : MonoBehaviour
         //playerAudio = GetComponent<PlayerAudio>();
 
         idleCountdown = timeBetweenIdles;
+
+        //Disable until activated by menu or opener
+        DisablePlayer(true);
+        hitstun = true;
     }
 
     // Update is called once per frame
@@ -243,6 +249,11 @@ public class PlayerMovement : MonoBehaviour
         anim.SetBool("isHurt", true);
         StartCoroutine(DoHitstun(2f));
 
+    }
+
+    public void Kill()
+    {
+        StartCoroutine(DoDie());
     }
 
     // Private Methods ----------------------------------------
@@ -407,16 +418,41 @@ public class PlayerMovement : MonoBehaviour
         anim.Play("Idle");
     }
 
-    IEnumerator DoHitstun(float stunVal)    // Hitstun lasts for a certain amt of time, but is only broken once the enemy is grounded again
+    IEnumerator DoHitstun(float stunVal)    // Hitstun lasts for a certain amt of time, but is only broken once the player is grounded again
     {
+        if(GetComponent<Health>().currentHealth > 0)
+        {
+            this.gameObject.tag = "Untagged";
+        }
         col.sharedMaterial = pMaterialBouncy;
         yield return new WaitForSeconds(stunVal);
         yield return new WaitUntil(() => isGrounded);
-
         col.sharedMaterial = pMaterialSlip;
-        hitstun = false;
-        DisablePlayer(false);
+        if (GetComponent<Health>().currentHealth > 0)
+        {
+            hitstun = false;
+            DisablePlayer(false);
+            anim.SetBool("isHurt", false);
+        }
+        else
+        {
+            StartCoroutine(DoDie());
+        } 
+    }
+
+    IEnumerator DoDie()
+    {
+        this.gameObject.tag = "Untagged";
+        HorizontalMovement = 0;
+        rb.velocity = Vector2.zero;
+        DisablePlayer(true);
+        anim.SetBool("isHurt", true);
+        yield return new WaitForSeconds(.05f);
+        anim.SetBool("isDefeated", true);
         anim.SetBool("isHurt", false);
+        yield return new WaitForSeconds(3f);
+        
+        GameManager.Instance.GameOver(true);
     }
 
 }

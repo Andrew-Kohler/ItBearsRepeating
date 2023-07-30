@@ -10,7 +10,10 @@ public class SmackableGetHit : MonoBehaviour
     DamageFlash damageFlash;
     Health smackableHealth;
     SmackableAnim smackableAnim;
+    SmackableAttack smackableAttack;
 
+    [Header("Smackable Properties")]
+    [SerializeField] public bool explodes; // If this explodes, there are animations and properties that differ
     [Header("Raycast Collision Check Variables")]
     // Will show a red ray drawn from center of your sprite, it should extend from your box collider to touch the ground. If it doesn't reach the ground, change rayLength until it does. If you cannot see it, click the Gizmos button in the top right of the Game Window.
     [SerializeField] private bool ShowDebugRaycast = false;
@@ -32,6 +35,7 @@ public class SmackableGetHit : MonoBehaviour
         smackableHealth = GetComponent<Health>();
         damageFlash = GetComponentInChildren<DamageFlash>();
         smackableAnim = GetComponentInChildren<SmackableAnim>();
+        smackableAttack = GetComponent<SmackableAttack>();
 
     }
 
@@ -62,10 +66,12 @@ public class SmackableGetHit : MonoBehaviour
             if (GetHitDirection(collision))
             {
                 smackableAnim.changeRotationSpeed(1);
+                smackableAttack.changeKnockbackDir(false);
             }
             else
             {
                 smackableAnim.changeRotationSpeed(2);
+                smackableAttack.changeKnockbackDir(true);
             }
             // try get component on PlayerAttack or EnemyAttack, get the appropriate damage and knock nums from those
             if (collision.gameObject.GetComponentInParent<PlayerAttack>() != null)
@@ -83,19 +89,32 @@ public class SmackableGetHit : MonoBehaviour
             if (collision.gameObject.CompareTag("Terrain"))
             {
                 smackableHealth.TakeDamage(1); // Whenever we hit terrain, take a point of damage
+                if(explodes && smackableHealth.currentHealth <= 0)
+                {
+                    GameObject explosion = (GameObject)Instantiate(Resources.Load("Explosion"), this.transform.position, Quaternion.Euler(new Vector3(0, 0, 0)));
+                    explosion.GetComponent<Explosion>().SetValues(10f, new Vector3(10f, 10f, 0f), right);
+                    Destroy(gameObject);
+                }
                 if(((left) || (right)) && !bottom)
                 {
                     smackableAnim.swapRotationDirection();
-                    //Bounce(true);
+                    smackableAttack.swapKnockbackDir();
                 }
-                /*else if (top || bottom)
-                {
-                   // Bounce(false);
-                }*/
+
             }
             else if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("Breakable"))
             {
-                smackableHealth.TakeDamage(99); // If we hit an enemy or breakable rn, auto-break
+                
+                if (!explodes) 
+                {
+                    smackableHealth.TakeDamage(99); // If we hit an enemy or breakable rn, auto-break
+                }
+                else 
+                {
+                    GameObject explosion = (GameObject)Instantiate(Resources.Load("Explosion"), this.transform.position, Quaternion.Euler(new Vector3(0, 0, 0)));
+                    explosion.GetComponent<Explosion>().SetValues(10f, new Vector3(10f, 10f, 0f), right);
+                    Destroy(gameObject);
+                }
             }
         }
     }

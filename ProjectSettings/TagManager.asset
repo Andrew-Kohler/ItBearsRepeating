@@ -47,13 +47,13 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Backbackbackground
+  - name: Background -2
     uniqueID: 2033833005
     locked: 0
-  - name: Backbackground
+  - name: Background -1
     uniqueID: 4268229477
     locked: 0
-  - name: Background
+  - name: Background - 0
     uniqueID: 4250252197
     locked: 0
   - name: Midground

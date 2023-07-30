@@ -8,15 +8,21 @@ public class SmackableAttack : MonoBehaviour
     [SerializeField] private Vector3 smackKnockback = new Vector3(1f, 1f, 0f);
     public float DMG => smackDMG;
     public Vector3 Knockback => smackKnockback;
-    /*// Start is called before the first frame update
-    void Start()
+
+    public void changeKnockbackDir(bool right)
     {
-        
+        if (!right)
+            smackKnockback = new Vector3(Mathf.Abs(smackKnockback.x), Mathf.Abs(smackKnockback.y), 0f);
+        else
+            smackKnockback = new Vector3((-1f *smackKnockback.x), smackKnockback.y, 0f);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void swapKnockbackDir()
     {
-        
-    }*/
+        if(smackKnockback.x > 0)
+            smackKnockback = new Vector3((-1f * smackKnockback.x), smackKnockback.y, 0f);
+        else
+            smackKnockback = new Vector3(Mathf.Abs(smackKnockback.x), Mathf.Abs(smackKnockback.y), 0f);
+    }
+
 }

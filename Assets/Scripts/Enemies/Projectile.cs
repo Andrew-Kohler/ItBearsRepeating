@@ -62,6 +62,12 @@ public class Projectile : MonoBehaviour
 			collision.gameObject.GetComponent<PlayerTakeDamage>().TakeDamage(this.gameObject);
 			StartCoroutine(DoWaitForShake());
 		}
+        if (collision.gameObject.CompareTag("Terrain") && damageValue == 10)
+        {
+			GameObject explosion = (GameObject)Instantiate(Resources.Load("Explosion"), this.transform.position, Quaternion.Euler(new Vector3(0, 0, 0)));
+			explosion.GetComponent<Explosion>().SetValues(10f, new Vector3(10f, 10f, 0f), right);
+			Destroy(gameObject);
+		}
 		
 	}
 

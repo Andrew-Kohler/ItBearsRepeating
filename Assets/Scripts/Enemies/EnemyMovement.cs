@@ -40,13 +40,18 @@ public class EnemyMovement : MonoBehaviour
     // The length of the ray used to detect a ledge
     [SerializeField] private float ledgeRayLength = 1f;
 
+    [Header("Sound Clips")]
+    [SerializeField] private AudioClip jump;
+
     [Header("Enemy-Specific Variables")]
     [SerializeField] private EnemyType enemyType = EnemyType.Melee;
     public EnemyType typeOfEnemy => enemyType;
     [SerializeField] private bool act = false;          // Whether the enemy's AI is enabled
+    [SerializeField] private bool bootedUp = false;     // Whether the bootup routine is done or not
     [SerializeField] private bool attack = false;       // Whether the enemy is attacking or not (determined by proximity to player)
     public bool isAttack => attack; 
-    [SerializeField] private float DistanceToStartActing = 10f; // How close the player should be to trigger the enemy to start doing something
+    [SerializeField] private float DistanceToStartActingX = 10f; // How close the player should be to trigger the enemy to start doing something
+    [SerializeField] private float DistanceToStartActingY = 10f;
     [SerializeField] private float DistanceToApproachTo = 2f;   // How close the enemy should get to the player before attacking
 
     private float HorizontalMovement;
@@ -65,6 +70,7 @@ public class EnemyMovement : MonoBehaviour
     private Collider2D col;
     private SpriteRenderer rend;
     private Animator anim;
+    private AudioSource audioS;
 
     [SerializeField] private GameObject enemySprite;    // The enemy sprite
     private GameObject bear;    // The player
@@ -73,12 +79,19 @@ public class EnemyMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
+        audioS = GetComponent<AudioSource>();
         pMaterial = col.sharedMaterial;
 
         rend = enemySprite.GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
         anim = enemySprite.GetComponent<Animator>(); //Get Animator Component
+        
 
         bear = GameObject.Find("Bear");   // Find the player (distance calcs will be important here)
+
+        if(enemyType != EnemyType.Rocket)
+        {
+            DistanceToApproachTo = Random.Range(DistanceToApproachTo, DistanceToApproachTo + 1.5f);   // Prevents aggressive clumping
+        }
     }
 
     // Update is called once per frame
@@ -95,17 +108,16 @@ public class EnemyMovement : MonoBehaviour
             Debug.DrawRay(col.bounds.center, Vector2.right * ledgeRayLength, Color.blue); 
         }
 
-           
-
-        if (!disabled) //If player movement is NOT disabled
+        if (!disabled && !GameManager.Instance.isGameOver()) //If enemy movement is NOT disabled
         {
             // If the player is in range and act is false
             //Debug.Log(Vector2.Distance(transform.position, bear.transform.position));
-            if (!act && Vector2.Distance(transform.position, bear.transform.position) < DistanceToStartActing)
+            if (!act && !bootedUp && Mathf.Abs(transform.position.x - bear.transform.position.x) < DistanceToStartActingX && Mathf.Abs(transform.position.y - bear.transform.position.y) < DistanceToStartActingY)
             {
                 // Act is now true
                 // This is what starts the enemy moving - once the player has come in range, enemies currently don't ever stop chasing
-                act = true;
+                bootedUp = true;
+                StartCoroutine(DoBootup());
             }
 
 
@@ -165,9 +177,10 @@ public class EnemyMovement : MonoBehaviour
                     } 
                     HorizontalMovement = 0;
                     attack = true;
+                    
                 }
 
-                
+                anim.SetBool("isAttacking", attack);
 
             }
         } // End of not-disabled behavior
@@ -201,8 +214,15 @@ public class EnemyMovement : MonoBehaviour
         
         DisableEnemy(true);
         rb.AddForce(knockback, ForceMode2D.Impulse);
-        StartCoroutine(DoHitstun(.5f));
+        if(GetComponent<Health>().currentHealth > 0)
+        {
+            StartCoroutine(DoHitstun(.5f));
+        }
+    }
 
+    public void Kill()
+    {
+        StartCoroutine(DoDie(.5f));
     }
 
     // Private methods ----------------------------------------
@@ -228,7 +248,7 @@ public class EnemyMovement : MonoBehaviour
             if (rb.velocity.y <= 0) //if player is falling
             {
                 //Make gravity harsher so they fall faster.
-                rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1) * Time.deltaTime;
+                //rb.velocity += Vector2.up * Physics2D.gravity.y * (FallMultiplier - 1) * Time.deltaTime;
 
             }
             else if (rb.velocity.y > 0)//  && !Input.GetButton("Jump")) //if player is jumping and holding jump button
@@ -236,6 +256,8 @@ public class EnemyMovement : MonoBehaviour
             }
 
         }
+
+        anim.SetFloat("yVelocity", rb.velocity.y);
 
     }
 
@@ -245,6 +267,7 @@ public class EnemyMovement : MonoBehaviour
         Debug.Log("Jump");
         rb.velocity = new Vector2(rb.velocity.x, 0); //Stop any previous vertical movement
         rb.AddForce(Vector2.up * JumpForce, ForceMode2D.Impulse); //Add force upwards as an impulse.
+        audioS.PlayOneShot(jump);
         //if (playerAudio && playerAudio != null)
         //{
         //  playerAudio.JumpSource.Play();
@@ -284,16 +307,38 @@ public class EnemyMovement : MonoBehaviour
 
     IEnumerator DoHitstun(float stunVal)    // Hitstun lasts for a certain amt of time, but is only broken once the enemy is grounded again
     {
+        anim.SetBool("isHurt", true);
         col.sharedMaterial = pMaterialBouncy;
         yield return new WaitForSeconds(stunVal);
         yield return new WaitUntil(() => isGrounded);
         col.sharedMaterial = pMaterial;
         DisableEnemy(false);
+        anim.SetBool("isHurt", false);
     }
 
-    //TODO
-    //...actually, freezing the enemy until the combo is done wouldn't be fun at all. nevermind.
-    // The enemies shouldn't be moving the beach ball about
+    IEnumerator DoDie(float stunVal)
+    {
+        anim.SetBool("isHurt", true);
+        col.sharedMaterial = pMaterialBouncy;
+        yield return new WaitForSeconds(stunVal);
+        //yield return new WaitUntil(() => isGrounded);
+        col.sharedMaterial = pMaterial;
+        anim.SetBool("isHurt", false);
+
+        anim.Play("Explode", 0, 0);
+        rb.Sleep();
+        yield return new WaitForSeconds(.498f); // .498
+        Destroy(this.gameObject);
+    }
+
+    IEnumerator DoBootup()
+    {
+        anim.Play("Wakeup");
+        yield return new WaitForSeconds(.415f);
+        act = true;
+        anim.Play("Run");
+    }
 
 
-}
+
+    }

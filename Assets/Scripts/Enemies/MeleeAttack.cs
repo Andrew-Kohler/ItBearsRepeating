@@ -11,4 +11,15 @@ public class MeleeAttack : MonoBehaviour
             this.gameObject.GetComponentInParent<EnemyAttack>().DamagePlayerMelee(collision);
         }
     }
+
+    /*private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            Debug.Log("Uwu");
+            //this.gameObject.GetComponentInParent<EnemyAttack>().DamagePlayerMelee(collision);
+        }
+        Debug.Log("Aha");
+    }*/
+    
 }
