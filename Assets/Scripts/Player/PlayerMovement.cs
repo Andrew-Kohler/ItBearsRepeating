@@ -54,10 +54,22 @@ public class PlayerMovement : MonoBehaviour
     private float idleCountdown;
     private GameObject playerSprite;
 
+    [Header("Sounds")]
+    [SerializeField] private AudioClip step1;
+    [SerializeField] private AudioClip step2;
+    [SerializeField] private AudioClip sniff;
+    [SerializeField] private AudioClip jump;
+    [SerializeField] private AudioClip airDashWhoosh;
+    [SerializeField] private AudioClip die;
+
+    private bool startWalksounds;
+    private bool startRunSounds;
+
     private Rigidbody2D rb;
     private Collider2D col;
     private SpriteRenderer rend;
     private Animator anim;
+    private AudioSource audioS;
     private PlayerCrouch crouch;
     private PlayerAttack attack;
     private PlayerSprint pSprint;
@@ -90,6 +102,7 @@ public class PlayerMovement : MonoBehaviour
 
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
+        audioS = GetComponent<AudioSource>();
         
         crouch = GetComponent<PlayerCrouch>();
         attack = GetComponent<PlayerAttack>();
@@ -99,8 +112,15 @@ public class PlayerMovement : MonoBehaviour
         idleCountdown = timeBetweenIdles;
 
         //Disable until activated by menu or opener
-        DisablePlayer(true);
-        hitstun = true;
+        if(SceneManager.GetActiveScene().buildIndex == 1)
+        {
+            DisablePlayer(true);
+            hitstun = true;
+        }
+
+        startWalksounds = false;
+        startRunSounds = false;
+        
     }
 
     // Update is called once per frame
@@ -123,18 +143,10 @@ public class PlayerMovement : MonoBehaviour
             {
                 idleCountdown = timeBetweenIdles;   // Reset our idle timer
                 anim.SetBool("isMovingH", true);
-                /*if (playerAudio && !playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
-                {
-                    playerAudio.WalkSource.Play();
-                }*/
             }
             else
             {
                 anim.SetBool("isMovingH", false);
-                /*if (playerAudio && playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
-                {
-                    playerAudio.WalkSource.Stop();
-                }*/
             }
             if (idleCountdown <= 0)
             {
@@ -161,17 +173,6 @@ public class PlayerMovement : MonoBehaviour
                     Jump();
                     jumpsLeft--;
                 }
-
-                if (Input.GetButtonDown("Slash"))
-                {
-                    Debug.Log("Ah");
-                }
-                /*if (canAirDash && Input.GetButtonDown("Slash") && !isGrounded && sprint && HorizontalMovement != 0) // If the player does the air dash
-                {
-                    
-                    StartCoroutine(DoAirDash());
-                }*/
-
                 // If they are grounded, reset their jumps and air dash
                 if (isGrounded)
                 {
@@ -183,14 +184,27 @@ public class PlayerMovement : MonoBehaviour
                 {
                     idleCountdown = timeBetweenIdles;
                     sprint = true;
+                    if (!startRunSounds && HorizontalMovement != 0)
+                    {
+                        Debug.Log("Start Run");
+                        StartCoroutine(DoRunSoundLoop());
+                        startRunSounds = true;
+                    }
                 }
                 else
                 {
                     sprint = false;
+                    if(!startWalksounds && HorizontalMovement != 0)
+                    {
+                        Debug.Log("Start Walk");
+                        StartCoroutine(DoWalkSoundLoop());
+                        startWalksounds = true;
+                    }
                 }
                     
                 anim.SetBool("isRunning", sprint);
             }
+
             else // If we are crouching or attacking
             {
                 if (crouch.IsCrouching)
@@ -339,11 +353,14 @@ public class PlayerMovement : MonoBehaviour
         if (HitTheGroundCheck(isGrounded))  // Resets rotation when we hit the ground
         {
             playerSprite.transform.rotation = Quaternion.Euler(0, 0, 0);
+            startWalksounds = false;
+            startRunSounds = false;
         }
     }
 
     private void Jump()
     {
+        audioS.PlayOneShot(jump, .7f);
         idleCountdown = timeBetweenIdles;
         rb.velocity = new Vector2(rb.velocity.x, 0); //Stop any previous vertical movement
         rb.AddForce(Vector2.up * JumpForce, ForceMode2D.Impulse); //Add force upwards as an impulse.
@@ -388,6 +405,34 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // Coroutines -----------------------------------------------
+
+    IEnumerator DoWalkSoundLoop()
+    {
+        // while: Grounded, moving, and not running
+        while(isGrounded && HorizontalMovement != 0 && !sprint)
+        {
+            audioS.PlayOneShot(step1, .2f);
+            yield return new WaitForSeconds(.3f);
+            audioS.PlayOneShot(step2, .2f);
+            yield return new WaitForSeconds(.3f);
+        }
+        startWalksounds = false;
+        yield return null;
+
+    }
+    IEnumerator DoRunSoundLoop()
+    {
+        // while: Grounded, moving, and not running
+        while (isGrounded && HorizontalMovement != 0 && sprint)
+        {
+            audioS.PlayOneShot(step1, .2f);
+            yield return new WaitForSeconds(.15f);
+            audioS.PlayOneShot(step2, .2f);
+            yield return new WaitForSeconds(.15f);
+        }
+        startRunSounds = false;
+        yield return null;
+    }
     IEnumerator DoAirDash()
     {
         disabled = true; // A CONTRADICTION IN TERMS, BY MY HAT AND SCARF
@@ -400,6 +445,7 @@ public class PlayerMovement : MonoBehaviour
 
         rb.gravityScale = .2f;
         rb.velocity = new Vector2(rb.velocity.x * dashPower, 0); //Stop any previous vertical movement
+        audioS.PlayOneShot(airDashWhoosh, .7f);
         //rb.AddForce(new Vector2(rb.velocity.x * dashPower, 0), ForceMode2D.Impulse);
         yield return new WaitUntil(() => isGrounded);
 
@@ -414,7 +460,10 @@ public class PlayerMovement : MonoBehaviour
     IEnumerator DoIdleTwo()    // Purely for playing and exiting Idle Animation 2
     {
         anim.Play("Idle2");
-        yield return new WaitForSeconds(2.583f);
+        audioS.PlayOneShot(sniff);
+        yield return new WaitForSeconds(1.583f);
+        audioS.PlayOneShot(sniff);
+        yield return new WaitForSeconds(1f);
         anim.Play("Idle");
     }
 
@@ -450,6 +499,7 @@ public class PlayerMovement : MonoBehaviour
         yield return new WaitForSeconds(.05f);
         anim.SetBool("isDefeated", true);
         anim.SetBool("isHurt", false);
+        audioS.PlayOneShot(die, .7f);
         yield return new WaitForSeconds(3f);
         
         GameManager.Instance.GameOver(true);

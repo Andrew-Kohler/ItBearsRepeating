@@ -53,7 +53,6 @@ public class PointOfInterestCam : MonoBehaviour
                 // Activation is based on x only to avoid weird radius behavior
                 if (Mathf.Abs(transform.position.x - player.transform.position.x) <= activationDistance && !camSwitch && !done)
                 {
-                    Debug.Log("Begin tailing");
                     camSwitch = true;
                     StopAllCoroutines();
                     lowerXBound = player.transform.position.x;
@@ -61,7 +60,6 @@ public class PointOfInterestCam : MonoBehaviour
                 }
                 if (following)
                 {
-                    Debug.Log("Tailing");
                     transform.position = new Vector3(player.transform.position.x, transform.position.y, transform.position.z);
                 }
 
@@ -69,7 +67,6 @@ public class PointOfInterestCam : MonoBehaviour
                 {
                     if (camSwitch)
                     {
-                        Debug.Log("End tailing");
                         camSwitch = false;
                         following = false;
                         done = true;
@@ -99,16 +96,17 @@ public class PointOfInterestCam : MonoBehaviour
     IEnumerator DoZoomOut() // Incorporate this point of interest into the camera view
     {
         //float lerpVal = 0f;
-        while(targetGroup.m_Targets[pointNumber].weight <= .99f) 
-        {
-            targetGroup.m_Targets[pointNumber].weight = Mathf.Lerp(targetGroup.m_Targets[pointNumber].weight, 1f, .01f);
-            yield return null;
-        }
         if (followPlayerX)
         {
             Debug.Log("Gamers?");
             following = true;
         }
+        while (targetGroup.m_Targets[pointNumber].weight <= .98f) 
+        {
+            targetGroup.m_Targets[pointNumber].weight = Mathf.Lerp(targetGroup.m_Targets[pointNumber].weight, 1f, .01f);
+            yield return null;
+        }
+        
         
         yield return null;
     }

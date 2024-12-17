@@ -25,10 +25,6 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private bool canJump = true;
     //The force of your jump (Be sure to have your gravity set to 1 for side-scroller
     [SerializeField] private float JumpForce = 7f;
-    //Number of jumps the enemy can do each time they touch the ground. (2 = Double jump)
-    [SerializeField] private int NumberOfJumps = 1;
-    // The multiplier at which you fall down (used for smooth movement) and it can't be below 1
-    [SerializeField] private float FallMultiplier = 3f;
 
     [Header("Raycast Jumping Variables")]
     // Will show a red ray drawn from center of your sprite, it should extend from your box collider to touch the ground. If it doesn't reach the ground, change rayLength until it does. If you cannot see it, click the Gizmos button in the top right of the Game Window.
@@ -42,6 +38,8 @@ public class EnemyMovement : MonoBehaviour
 
     [Header("Sound Clips")]
     [SerializeField] private AudioClip jump;
+    [SerializeField] private AudioClip enemyWalk;
+    [SerializeField] private AudioClip die;
 
     [Header("Enemy-Specific Variables")]
     [SerializeField] private EnemyType enemyType = EnemyType.Melee;
@@ -60,6 +58,7 @@ public class EnemyMovement : MonoBehaviour
     PhysicsMaterial2D pMaterial;
     [SerializeField] PhysicsMaterial2D pMaterialBouncy;
 
+    bool startWalkSounds;
 
     private Vector3 currentVelocity = Vector3.zero;
 
@@ -71,6 +70,7 @@ public class EnemyMovement : MonoBehaviour
     private SpriteRenderer rend;
     private Animator anim;
     private AudioSource audioS;
+    private EnemyTakeDamage enemyTake;
 
     [SerializeField] private GameObject enemySprite;    // The enemy sprite
     private GameObject bear;    // The player
@@ -84,7 +84,7 @@ public class EnemyMovement : MonoBehaviour
 
         rend = enemySprite.GetComponent<SpriteRenderer>(); //Get Sprite Renderer Component
         anim = enemySprite.GetComponent<Animator>(); //Get Animator Component
-        
+        enemyTake = GetComponent<EnemyTakeDamage>();
 
         bear = GameObject.Find("Bear");   // Find the player (distance calcs will be important here)
 
@@ -126,6 +126,12 @@ public class EnemyMovement : MonoBehaviour
                 if (HorizontalMovement != 0) // || VerticalMovement != 0)
                 {
                     anim.SetBool("isMovingH", true);
+                    if (!startWalkSounds)
+                    {
+                        Debug.Log("Start Walk");
+                        StartCoroutine(DoWalkSoundLoop());
+                        startWalkSounds = true;
+                    }
                     /*if (playerAudio && !playerAudio.WalkSource.isPlaying && playerAudio.WalkSource.clip != null)
                     {
                         playerAudio.WalkSource.Play();
@@ -305,6 +311,19 @@ public class EnemyMovement : MonoBehaviour
 
     // Coroutines ----------------------------------------
 
+    IEnumerator DoWalkSoundLoop()
+    {
+        // while: Grounded, moving, and not running
+        while (isGrounded && HorizontalMovement != 0)
+        {
+            audioS.PlayOneShot(enemyWalk, .2f);
+            yield return new WaitForSeconds(.8f);
+        }
+        startWalkSounds = false;
+        yield return null;
+
+    }
+
     IEnumerator DoHitstun(float stunVal)    // Hitstun lasts for a certain amt of time, but is only broken once the enemy is grounded again
     {
         anim.SetBool("isHurt", true);
@@ -326,7 +345,9 @@ public class EnemyMovement : MonoBehaviour
         anim.SetBool("isHurt", false);
 
         anim.Play("Explode", 0, 0);
-        rb.Sleep();
+        audioS.PlayOneShot(die, .2f);
+        enemyTake.enabled = false;
+        //rb.Sleep();
         yield return new WaitForSeconds(.498f); // .498
         Destroy(this.gameObject);
     }

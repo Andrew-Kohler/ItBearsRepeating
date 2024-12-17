@@ -6,6 +6,7 @@ public class SmackableGetHit : MonoBehaviour
 {
     Rigidbody2D rb;
     Collider2D col;
+    AudioSource audioS;
 
     DamageFlash damageFlash;
     Health smackableHealth;
@@ -22,6 +23,9 @@ public class SmackableGetHit : MonoBehaviour
     // The length of the ray used to detect the ground.
     [SerializeField] private float rayLength = .5f;
 
+    [SerializeField] private AudioClip getHitSound;
+    [SerializeField] private AudioClip bounceSound;
+
     public bool left;  // Contact booleans for the different sides
     public bool right;
     public bool top;
@@ -31,6 +35,7 @@ public class SmackableGetHit : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>(); //Find the Rigidbody component on the gameobject this script is attached to.
         col = GetComponent<Collider2D>(); //Get Collider component
+        audioS = GetComponent<AudioSource>();
 
         smackableHealth = GetComponent<Health>();
         damageFlash = GetComponentInChildren<DamageFlash>();
@@ -60,6 +65,7 @@ public class SmackableGetHit : MonoBehaviour
     {  
         if (collision.CompareTag("Player Hitbox"))   // If we touch a player-controlled hitbox
         {
+            audioS.PlayOneShot(getHitSound);
             gameObject.tag = "Player Hitbox";
             gameObject.layer = LayerMask.NameToLayer("Smackable");
             damageFlash.CallDamageFlash();
@@ -89,6 +95,7 @@ public class SmackableGetHit : MonoBehaviour
             if (collision.gameObject.CompareTag("Terrain"))
             {
                 smackableHealth.TakeDamage(1); // Whenever we hit terrain, take a point of damage
+                audioS.PlayOneShot(bounceSound);
                 if(explodes && smackableHealth.currentHealth <= 0)
                 {
                     GameObject explosion = (GameObject)Instantiate(Resources.Load("Explosion"), this.transform.position, Quaternion.Euler(new Vector3(0, 0, 0)));

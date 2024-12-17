@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class LevelStartView : View
 {
@@ -29,7 +30,11 @@ public class LevelStartView : View
             panel.color = Color.white;
         }
         intro = false;
-        GameManager.Instance.Gameplay(false);
+        if (SceneManager.GetActiveScene().buildIndex == 1)
+        {
+            GameManager.Instance.Gameplay(false);
+        }
+        
         audioS = GetComponent<AudioSource>();
     }
 
@@ -54,11 +59,24 @@ public class LevelStartView : View
         GetComponent<FadeUI>().UIFadeIn(nextIndex);
     }
 
+    public void SwapColors()
+    {
+        if (text.color != Color.black)
+        {
+            text.color = Color.black;
+            panel.color = Color.white;
+        }
+    }
+
 
     IEnumerator DoLevelStart()
     {
         text.text = "";
         yield return new WaitForSeconds(2f);
+        if(SceneManager.GetActiveScene().buildIndex == 3)
+        {
+            yield return new WaitForSeconds(3f);
+        }
 
         // Type out the text letter by letter 
         var numCharsRevealed = 0;

@@ -31,14 +31,14 @@ public class Health : MonoBehaviour
             {
                 /*if (!GetComponent<PlayerMovement>().hitstun)
                 {*/
-                    Debug.Log("Health is down");
-                    GetComponent<PlayerMovement>().Kill();
-                    enabled = false;
+                Debug.Log("Health is down");
+                GetComponent<PlayerMovement>().Kill();
+                enabled = false;
                 //}
             }
-            else if(GetComponent<EnemyMovement>() != null)
+            else if (GetComponent<EnemyMovement>() != null)
             {
-                
+
                 GetComponent<EnemyMovement>().Kill();
                 this.enabled = false;
             }
@@ -46,7 +46,11 @@ public class Health : MonoBehaviour
             {
                 GetComponent<TreeTakeDamage>().Topple();
             }
-            else if(GetComponent<SmackableGetHit>() != null)
+            else if (GetComponent<ObjectTakeDamage>() != null && this.gameObject.name == "Time Machine")
+            {
+                GetComponent<ObjectTakeDamage>().BlowUpTimeMachine();
+            }
+            else if (GetComponent<SmackableGetHit>() != null)
             {
                 if (!GetComponent<SmackableGetHit>().explodes)
                 {
@@ -55,7 +59,7 @@ public class Health : MonoBehaviour
             }
             else
             {
-                 Destroy(this.gameObject);
+                Destroy(this.gameObject);
             }
         }
             

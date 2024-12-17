@@ -15,7 +15,6 @@ public class DialogueManager : MonoBehaviour
     [SerializeField] private bool isFacingRight;    // Whether the speaker is facing left or right
     [SerializeField] private bool startActivated;   // Is a conversation activated by scene start or player distance?
     [SerializeField] private bool distanceActivated;
-    [SerializeField] private float activationDistanceX;
     [SerializeField] private bool saysLastLine;             // Check this if the speaker closes the convo
     [Header("Textbox Details")]
     [SerializeField] private float xOffset = 1f;    // Offset of text bubble from parent
@@ -34,7 +33,6 @@ public class DialogueManager : MonoBehaviour
     private Transform parent;                       // Transform of the parent for positioning
     public string[] lines;                         // The actual lines in a usable form
     private int currentLine = 0;
-    private bool activeCoroutine;
     private AudioSource voiceSource;
 
     public delegate void OnConvoOver();
@@ -56,37 +54,11 @@ public class DialogueManager : MonoBehaviour
         //speakerWords.enableAutoSizing = false;
         getFileContents();
         voiceSource = GetComponent<AudioSource>();
-        activeCoroutine = false;
         this.gameObject.SetActive(false);
-
-        /*if (startActivated)
-        {
-            StartCoroutine(DoAutoActivation());
-        }*/
-        //this.gameObject.SetActive(false);
-        
-
-        
-        /*else
-        {
-
-        }*/
     }
 
     private void Update()
     {
-        /*if (playerControlled)
-        {
-            if (activeCoroutine)
-            {
-                if (Input.GetButtonDown("Interact"))
-                {
-                    speakerWords.text = lines[currentLine].Substring(1, lines[currentLine].Length - 1);
-                    activeCoroutine = false;
-                }
-            }
-        }*/
-        
     }
 
     // Public methods --------------------------------------------------------
@@ -116,7 +88,6 @@ public class DialogueManager : MonoBehaviour
 
     IEnumerator DoReadLine(string line)
     {
-        activeCoroutine = true;
         var numCharsRevealed = 1;               // Read out the text letter by letter
         while (numCharsRevealed < line.Length)
         {
@@ -146,7 +117,6 @@ public class DialogueManager : MonoBehaviour
         {  
             if (saysLastLine)
             {
-                Debug.Log("HEWWO");
                 this.gameObject.SetActive(false);
                 StopAllCoroutines();
             }
@@ -173,7 +143,6 @@ public class DialogueManager : MonoBehaviour
             
         }
         
-        activeCoroutine = false;
 
         yield return null;
     }

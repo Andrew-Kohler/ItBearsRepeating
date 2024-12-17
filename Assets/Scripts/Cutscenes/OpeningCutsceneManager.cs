@@ -23,6 +23,14 @@ public class OpeningCutsceneManager : MonoBehaviour
         StartCoroutine(DoStartCutscene());
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            EndScene();
+        }
+    }
+
     private void EndScene()
     {
         ViewManager.GetView<LevelStartView>().EndLevel(1);

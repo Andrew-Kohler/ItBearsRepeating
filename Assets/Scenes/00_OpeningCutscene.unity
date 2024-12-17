@@ -161,7 +161,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: (Press E to continue)
+  m_text: '(Press E to continue)
+
+
+    (Press Q to skip)'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1364c03ad8f2a534fac136f24e32ee10, type: 2}
   m_sharedMaterial: {fileID: -6272560118108590595, guid: 1364c03ad8f2a534fac136f24e32ee10, type: 2}
@@ -673,7 +676,6 @@ MonoBehaviour:
   isFacingRight: 1
   startActivated: 0
   distanceActivated: 0
-  activationDistanceX: 0
   saysLastLine: 0
   xOffset: 1
   yOffset: 1.2
@@ -957,7 +959,6 @@ MonoBehaviour:
   isFacingRight: 0
   startActivated: 1
   distanceActivated: 0
-  activationDistanceX: 0
   saysLastLine: 1
   xOffset: 2
   yOffset: 1.7
@@ -2142,6 +2143,7 @@ MonoBehaviour:
   levelStartText: July 2, 1992
   whiteScreen: 0
   transition: 0
+  textSpeed: 0.3
   text: {fileID: 924285930}
   panel: {fileID: 1401206890}
   transitionTo: {fileID: 0}

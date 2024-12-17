@@ -6,6 +6,11 @@ using UnityEngine.SceneManagement;
 public class StartMenu : MonoBehaviour
 {
     [SerializeField] GameObject creditsSubmenu;
+
+    private void Start()
+    {
+        creditsSubmenu.SetActive(false);
+    }
     public void StartButton()
     {
         GameManager.Instance.Gameplay(true);
@@ -30,6 +35,7 @@ public class StartMenu : MonoBehaviour
 
     IEnumerator DoFadeInCredits()
     {
+        creditsSubmenu.SetActive(true);
         CanvasGroup canvasGroup = creditsSubmenu.GetComponent<CanvasGroup>();
 
         creditsSubmenu.GetComponentInChildren<Animator>().Play("Scroll", 0, 0);
@@ -38,6 +44,7 @@ public class StartMenu : MonoBehaviour
             canvasGroup.alpha += Time.deltaTime * 3f;
             yield return null;
         }
+        //creditsSubmenu.GetComponentInChildren<Animator>().Play("Scroll", 0, 0);
         yield return null;
 
     }
@@ -50,6 +57,7 @@ public class StartMenu : MonoBehaviour
             canvasGroup.alpha -= Time.deltaTime * 3f;
             yield return null;
         }
+        creditsSubmenu.SetActive(false);
         yield return null;
     }
 }

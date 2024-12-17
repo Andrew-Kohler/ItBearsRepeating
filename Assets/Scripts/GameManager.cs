@@ -7,9 +7,9 @@ public class GameManager : MonoBehaviour
 
     private static GameManager _instance;
 
-    private bool _isGameOver;   // Has the player been defeated?
+    public bool _isGameOver;   // Has the player been defeated?
     private bool _isCutscene;   // Are we in a cutscene?
-    private bool _isGameplay;   // Is gameplay going on?
+    public bool _isGameplay;   // Is gameplay going on?
     private bool _isLevelOver;  // Has the level concluded?
 
     public delegate void OnGameOver();

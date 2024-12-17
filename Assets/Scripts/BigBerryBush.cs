@@ -31,7 +31,7 @@ public class BigBerryBush : MonoBehaviour
         {
             if (Input.GetButtonDown("Interact"))
             {
-                ViewManager.GetView<InGameUIView>().ActivateHealthWheel();
+                //ViewManager.GetView<InGameUIView>().ActivateHealthWheel();
                 StartCoroutine(DoEndTutorial());
             }
         }
@@ -61,7 +61,9 @@ public class BigBerryBush : MonoBehaviour
         canInteract = false;
         //berries.gameObject.SetActive(false);
         audioS.Play();
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(2f);
+        ViewManager.Show<LevelStartView>(false);
+        ViewManager.GetView<LevelStartView>().EndLevel(2);
         //Destroy(this.gameObject);
     }
 }

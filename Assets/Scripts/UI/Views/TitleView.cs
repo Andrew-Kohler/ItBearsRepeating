@@ -6,6 +6,8 @@ public class TitleView : View
 {
     [SerializeField] GameObject creditsSubmenu;
     [SerializeField] PlayerMovement player;
+    [SerializeField] GameObject musicPlayer;
+    [SerializeField] GameObject ambiancePlayer;
     [SerializeField] View transitionTo;
 
     private bool closing;
@@ -20,6 +22,8 @@ public class TitleView : View
         if (GameManager.Instance.isGameplay() && !closing) // Once the start button has been clicked, fade the titles out and show the in-game UI
         {
             closing = true;
+            musicPlayer.SetActive(false);
+            ambiancePlayer.SetActive(true);
             player.DisablePlayer(false);
             player.hitstun = false;
             GetComponent<FadeUI>().UIFadeOut(transitionTo);
